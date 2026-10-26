@@ -806,7 +806,7 @@ else setConn('', 'Ansluter…');
 renderClock(); setInterval(renderClock, 10000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
 loadPrices(); setInterval(loadPrices, 15*60*1000);
-loadCal(); setInterval(loadCal, 5*60*1000);
+loadCal(); setInterval(loadCal, 60*1000);
 
 /* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
 (function(){
