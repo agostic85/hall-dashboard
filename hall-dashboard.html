@@ -120,7 +120,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
 .spark path.l{stroke:var(--blue);stroke-width:2;fill:none}
 .spark path.a{fill:url(#sg);stroke:none}
 .phases{display:flex;gap:.5rem;margin-top:.55rem}
-.phase{flex:1;font-size:.72rem;color:var(--muted)}
+.phase{flex:1;font-size:.85rem;color:var(--muted)}
 .phase i{display:block;height:.3rem;border-radius:99px;background:#262c37;margin-top:.25rem;overflow:hidden}
 .phase i b{display:block;height:100%;background:var(--blue);border-radius:99px}
 
@@ -238,7 +238,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
 
     <section class="col col-right">
       <div class="card door" id="door"></div>
-      <div class="card energy" style="flex:1"><div id="energy"></div><div id="apps" class="apps"></div></div>
+      <div class="card energy"><div id="energy"></div></div>
     </section>
   </main>
 </div>
@@ -528,9 +528,8 @@ function renderEnergy(){
     return '<div class="phase">'+k+' · '+num(a)+' A<i><b style="width:'+Math.min(100,a/16*100)+'%"></b></i></div>';
   }).join('');
   $('energy').innerHTML =
-    '<div class="head" style="margin-bottom:.4rem"><h2>'+icon('bolt')+'Effekt just nu</h2><span class="sub">Idag '+num(today)+' kWh</span></div>'+
+    '<div class="head" style="margin-bottom:.4rem"><h2>'+icon('bolt')+'Effekt just nu</h2></div>'+
     '<div class="row"><div class="big">'+(p>=1000?num(p/1000,2):num(p,0))+'<span class="unit">'+(p>=1000?'kW':'W')+'</span></div></div>'+
-    '<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none"><path class="a" d="'+area+'"/><path class="l" d="'+path+'" vector-effect="non-scaling-stroke"/></svg>'+
     '<div class="phases">'+ph+'</div>';
 }
 
@@ -570,7 +569,7 @@ function renderAlerts(){
 }
 
 function render(){
-  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderApps(); renderAlerts();
+  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderAlerts();
   if(dimIdx!=null) syncDim();
 }
 
