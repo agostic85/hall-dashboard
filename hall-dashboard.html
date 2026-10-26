@@ -137,6 +137,22 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
 .pbar{height:.25rem;border-radius:99px;background:#262c37;margin-top:.3rem;overflow:hidden}
 .pbar b{display:block;height:100%;background:var(--blue)}
 
+/* Spotpris */
+.weather{display:flex;flex-direction:column}
+.weather .indoor{margin-top:auto}
+.price{display:flex;flex-direction:column}
+.price-top{display:flex;align-items:center;gap:1.1rem;margin-bottom:.5rem}
+.price-now{flex:1}
+.lvl{display:inline-block;margin-left:.5rem;padding:.2rem .6rem;border-radius:99px;font-size:.75rem;font-weight:600;vertical-align:middle;letter-spacing:0}
+.lvl.low{background:#123a2a;color:var(--good)} .lvl.mid{background:#3a2c14;color:var(--warm)} .lvl.high{background:#3a1a1e;color:var(--bad)}
+.pstat{display:flex;flex-direction:column;gap:.1rem;font-size:.78rem;color:var(--muted);padding-left:1rem;border-left:1px solid var(--line)}
+.pstat b{font-size:1.1rem;font-weight:600}
+.pstat.lo b{color:var(--good)} .pstat.hi b{color:var(--bad)}
+#pchart{flex:1;min-height:6rem;position:relative}
+#pchart svg{position:absolute;inset:0;width:100%;height:100%;stroke:none;fill:initial}
+#pchart text{font-size:11px;fill:var(--muted);font-family:inherit}
+.pnote{font-size:.72rem;color:var(--faint);margin-top:.35rem}
+
 /* Sheet + dialog */
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10}
 .scrim.show{display:flex}
@@ -203,8 +219,8 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
 
   <main>
     <section class="col col-left">
-      <div class="card weather" id="weather"></div>
-      <div class="card" id="printers" style="flex:1"></div>
+      <div class="card weather" id="weather" style="flex:1"></div>
+      <div class="card car" id="car"></div>
     </section>
 
     <section class="col col-mid">
@@ -215,11 +231,10 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
         </div>
         <div class="light-grid" id="lights"></div>
       </div>
-      <div class="card modes" id="modes" style="flex:1"></div>
+      <div class="card price" id="price" style="flex:1"></div>
     </section>
 
     <section class="col col-right">
-      <div class="card car" id="car"></div>
       <div class="card door" id="door"></div>
       <div class="card energy" style="flex:1"><div id="energy"></div><div id="apps" class="apps"></div></div>
     </section>
@@ -273,17 +288,12 @@ var CONFIG = {
     {name:'Matbord',       ids:['d135ff19-b4db-4856-aa10-37e5263e5ddd']},
     {name:'Hall',          ids:['ef2ff144-f7f2-4a11-9ff5-31a9493d979a']}
   ],
-  modes: [
-    {name:'Gästläge',          id:'60f53675-d519-4105-9261-512b46ca1b88'},
-    {name:'Semesterläge',      id:'ff1f8d42-e899-4136-9f95-0099bf59bc1c'},
-    {name:'Sofie sover',       id:'f1ed805b-8e2f-4ffe-93f6-08c8cf355e8d'},
-    {name:'Pausa automationer',id:'903b9f8b-eb3d-45c0-a497-919b02a5f386'}
-  ],
+  priceArea: 'SE2',     // elområde för spotpris (Östersund = SE2)
+  priceVat:  false,     // true = visa spotpris inkl. 25 % moms
   appliances: [
     {name:'Diskmaskin',  id:'3c86166a-e849-44dc-be9f-f3c460fcc2d5', icon:'dish',   runW:5},
     {name:'Tvättmaskin', id:'a70e0b24-8530-4cf9-a1d1-fac8b56618f1', icon:'washer', runW:5}
-  ],
-  printers: { x2d:'7002182a-58f0-4986-86a3-c8a67ae0a9a7', u1:'a73ec2f2-9bc4-4032-8fa5-ff5df9fd91ad' }
+  ]
 };
 
 /* Ögonblicksbild från Homey (26 okt 2026) – används i demoläge */
@@ -437,14 +447,6 @@ function renderWeather(){
     '</div>';
 }
 
-function renderModes(){
-  var h = '<div class="head"><h2>'+icon('home')+'Lägen</h2></div>';
-  CONFIG.modes.forEach(function(m,i){
-    var on = !!v(m.id,'onoff');
-    h += '<button class="mode'+(on?' on':'')+'" data-act="mode" data-i="'+i+'"><span>'+m.name+'</span><span class="switch"></span></button>';
-  });
-  $('modes').innerHTML = h;
-}
 
 function lightInfo(L){
   var on = 0, dimSum = 0, dimN = 0;
@@ -537,7 +539,10 @@ function renderApps(){
          '<span class="as">'+(run?'Kör · '+num(w,0)+' W':'Av')+'</span></div>';
   });
   $('apps').innerHTML = h;
-  h = '<div class="head" style="margin-bottom:.3rem"><h2>'+icon('printer')+'3D-skrivare</h2></div>';
+}
+/* (3D-skrivare borttagna) */
+function _unusedPrinters(){
+  var h = '';
   var x = CONFIG.printers.x2d, pr = v(x,'bambu_progress_percentage'), rem = v(x,'bambu_progress_time_remaining');
   var xRun = pr!=null && pr<100 && rem && rem!=='0 min';
   h += '<div class="app-row'+(xRun?' run':(pr===100?' done':''))+'"><span class="ai">'+icon('printer')+'</span><span class="an">X2D'+
@@ -548,7 +553,7 @@ function renderApps(){
   h += '<div class="app-row'+(uRun?' run':'')+'"><span class="ai">'+icon('printer')+'</span><span class="an">Snapmaker U1'+
        (uRun?'<div class="pbar"><b style="width:'+up+'%"></b></div>':'')+'</span>'+
        '<span class="as">'+(uRun? num(up,0)+' %' : us==='disconnected'?'Frånkopplad':(us||'–'))+'</span></div>';
-  $('printers').innerHTML = h;
+  return h;
 }
 
 function renderAlerts(){
@@ -562,9 +567,105 @@ function renderAlerts(){
 }
 
 function render(){
-  renderWeather(); renderModes(); renderLights(); renderCar(); renderDoor(); renderEnergy(); renderApps(); renderAlerts();
+  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderApps(); renderAlerts();
   if(dimIdx!=null) syncDim();
 }
+
+/* ===================== Spotpris ===================== */
+var PRICE_DEMO = [1.8,2.2,2,2,1.8,1.4,1.4,1.4,1.3,1.1,1.1,0.8,0,0.1,0.1,0.2,0.6,1,0.9,1.5,1.6,2.2,3.2,4,3.6,4.6,6.2,6.1,6.7,7.8,9.7,9,11.5,11.4,8.7,8.5,9.8,11.4,11.7,11,7.6,9.4,10.5,10.6,8.1,8.2,10,11.1,6.2,7,9.2,11.8,8.1,8.9,13.1,15.6,11.3,14.6,17.4,18.3,17.4,19.1,20.9,21.2,20.3,20.5,21.3,24.5,21.8,23.3,28.1,29.3,30.1,22.3,22.2,21.5,19.6,19.8,20.6,19.4,22.2,22.9,22.3,19.5,25.2,23.1,21,21,24.5,20.3,14.9,13.1,16.6,13.2,11.4,7.3]; // öre/kWh SE2 26 okt 2026, 15-min
+var prices = {};
+function ymd(d){ return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+function loadDay(d){
+  var k = ymd(d);
+  var url = 'https://www.elprisetjustnu.se/api/v1/prices/'+d.getFullYear()+'/'+k.slice(5)+'_'+CONFIG.priceArea+'.json';
+  return fetch(url).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); }).then(function(a){
+    prices[k] = a.map(function(x){ return {t:new Date(x.time_start).getTime(), p:x.SEK_per_kWh*100*(CONFIG.priceVat?1.25:1)}; });
+    try{ localStorage.setItem('hallDash.prices', JSON.stringify(prices)); }catch(e){}
+  });
+}
+function loadPrices(){
+  var t = new Date(), m = new Date(t.getFullYear(), t.getMonth(), t.getDate()+1);
+  var keep = {}; keep[ymd(t)] = 1; keep[ymd(m)] = 1;
+  if(!Object.keys(prices).length){ try{ prices = JSON.parse(localStorage.getItem('hallDash.prices')||'{}'); }catch(e){} }
+  Object.keys(prices).forEach(function(k){ if(!keep[k]) delete prices[k]; });
+  var jobs = [];
+  if(!prices[ymd(t)]) jobs.push(loadDay(t).catch(function(){}));
+  if(!prices[ymd(m)]) jobs.push(loadDay(m).catch(function(){}));
+  Promise.all(jobs).then(function(){
+    if(!prices[ymd(t)] && DEMO){
+      var s0 = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
+      prices[ymd(t)] = PRICE_DEMO.map(function(p,i){ return {t:s0+i*900000, p:p}; });
+    }
+    renderPrice();
+  });
+}
+function hourly(){
+  var h = {};
+  Object.keys(prices).forEach(function(k){ prices[k].forEach(function(x){
+    var d = new Date(x.t); d.setMinutes(0,0,0); var key = d.getTime();
+    (h[key] || (h[key] = [])).push(x.p);
+  }); });
+  return Object.keys(h).map(Number).sort(function(a,b){ return a-b; }).map(function(k){
+    var a = h[k]; return {t:k, p:a.reduce(function(s,x){ return s+x; },0)/a.length};
+  });
+}
+function ore(p){ return num(p, Math.abs(p)<10?1:0); }
+function hh(t){ return ('0'+new Date(t).getHours()).slice(-2); }
+function span(t){
+  var d = new Date(t), today = ymd(new Date());
+  return (ymd(d)===today ? '' : 'imorgon ') + 'kl '+hh(t)+'–'+hh(t+3600000);
+}
+function renderPrice(){
+  var el = $('price'); if(!el) return;
+  var head = '<div class="head" style="margin-bottom:.5rem"><h2>'+icon('bolt')+'Elpris '+CONFIG.priceArea+'</h2><span class="sub">öre/kWh · spotpris '+(CONFIG.priceVat?'inkl.':'exkl.')+' moms, utan nät & skatt</span></div>';
+  var H = hourly(), now = Date.now();
+  if(!H.length){ el.innerHTML = head + '<div class="sub">Hämtar elpriser…</div>'; return; }
+  var cur = null;
+  Object.keys(prices).forEach(function(k){ prices[k].forEach(function(x){ if(x.t<=now && now<x.t+900000) cur = x.p; }); });
+  var hs = new Date(); hs.setMinutes(0,0,0); hs = hs.getTime();
+  var fut = H.filter(function(x){ return x.t>=hs; });
+  if(!fut.length) fut = H;
+  var sorted = fut.map(function(x){ return x.p; }).sort(function(a,b){ return a-b; });
+  var q1 = sorted[Math.floor((sorted.length-1)/3)], q2 = sorted[Math.floor((sorted.length-1)*2/3)];
+  function lvl(p){ return p<=q1 ? 'low' : p<=q2 ? 'mid' : 'high'; }
+  var mn = fut[0], mx = fut[0];
+  fut.forEach(function(x){ if(x.p<mn.p) mn = x; if(x.p>mx.p) mx = x; });
+  if(cur==null) cur = fut[0].p;
+  var L = lvl(cur), LT = {low:'Billigt', mid:'Normalt', high:'Dyrt'}[L];
+  var hasTomorrow = !!prices[ymd(new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()+1))];
+  el.innerHTML = head +
+    '<div class="price-top">'+
+      '<div class="price-now"><span class="big">'+ore(cur)+'</span><span class="unit">öre</span><span class="lvl '+L+'">'+LT+' just nu</span></div>'+
+      '<div class="pstat lo">Lägst '+span(mn.t)+'<b>'+ore(mn.p)+' öre</b></div>'+
+      '<div class="pstat hi">Högst '+span(mx.t)+'<b>'+ore(mx.p)+' öre</b></div>'+
+    '</div>'+
+    '<div id="pchart"></div>'+
+    '<div class="pnote">Grönt billigast · gult normalt · rött dyrast av kommande timmar'+(hasTomorrow ? '' : ' · morgondagens priser kommer ca kl 13')+'</div>';
+  drawChart(hasTomorrow ? H.filter(function(x){ return x.t >= hs-2*3600000; }) : H, hs, mn, mx, lvl);
+}
+function drawChart(H, hs, mn, mx, lvl){
+  var box = $('pchart'); var W = box.clientWidth, Hh = box.clientHeight;
+  if(!W || !Hh) return;
+  var top = 16, bot = 16, ch = Hh-top-bot, n = H.length, bw = W/n, g = Math.max(1, bw*.18);
+  var maxP = 1; H.forEach(function(x){ if(x.p>maxP) maxP = x.p; }); maxP *= 1.08;
+  var col = {low:'#3ecf8e', mid:'#f6b84b', high:'#ff6b6b'};
+  var s = '<svg viewBox="0 0 '+W+' '+Hh+'" width="'+W+'" height="'+Hh+'">';
+  H.forEach(function(x,i){
+    var bh = Math.max(2, Math.max(0,x.p)/maxP*ch), xx = i*bw+g/2, yy = top+ch-bh, past = x.t<hs, isCur = x.t===hs;
+    var f = past ? '#2a303b' : col[lvl(x.p)];
+    s += '<rect x="'+xx.toFixed(1)+'" y="'+yy.toFixed(1)+'" width="'+(bw-g).toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="2" fill="'+f+'" fill-opacity="'+(past?1:(isCur?1:.75))+'"'+(isCur?' stroke="#fff" stroke-width="1.5"':'')+'/>';
+    var hr = new Date(x.t).getHours();
+    if(hr===0 && i>0){
+      s += '<line x1="'+(i*bw).toFixed(1)+'" y1="4" x2="'+(i*bw).toFixed(1)+'" y2="'+(top+ch)+'" stroke="#5b6475" stroke-dasharray="3 3"/>';
+      s += '<text x="'+(i*bw+4).toFixed(1)+'" y="11">imorgon</text>';
+    }
+    if(isCur) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(Hh-3)+'" text-anchor="middle" style="fill:#eef1f6;font-weight:600">nu</text>';
+    else if(hr%3===0) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(Hh-3)+'" text-anchor="middle">'+('0'+hr).slice(-2)+'</text>';
+    if(x===mn || x===mx) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(yy-4).toFixed(1)+'" text-anchor="middle" style="fill:'+(x===mn?'#3ecf8e':'#ff6b6b')+';font-weight:600">'+ore(x.p)+'</text>';
+  });
+  box.innerHTML = s + '</svg>';
+}
+window.addEventListener('resize', function(){ renderPrice(); });
 
 /* ===================== Interaktion ===================== */
 var dimIdx = null, pressTimer = null, longFired = false, unlockTimer = null;
@@ -618,7 +719,6 @@ document.addEventListener('click', function(e){
   var act = t.dataset.act;
   switch(act){
     case 'light': toggleLight(+t.dataset.i); break;
-    case 'mode': var m = CONFIG.modes[+t.dataset.i]; setCap(m.id,'onoff',!v(m.id,'onoff')); break;
     case 'alloff':
       CONFIG.lights.forEach(function(L){ L.ids.forEach(function(id){ if(v(id,'onoff')) setCap(id,'onoff',false); }); });
       toast('Alla lampor släcks'); break;
@@ -645,6 +745,7 @@ if(DEMO){ setConn('demo','Demoläge'); for(var k=0;k<40;k++){ poll(); } }
 else setConn('', 'Ansluter…');
 renderClock(); setInterval(renderClock, 10000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
+loadPrices(); setInterval(loadPrices, 15*60*1000);
 
 /* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
 (function(){
