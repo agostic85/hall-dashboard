@@ -485,7 +485,7 @@ function renderCar(){
   var clim = !!v(c,'climate_control'), force = !!v(D.force,'onoff');
   $('car').innerHTML =
     '<div class="head"><h2>'+icon('car')+'EV6</h2>'+
-      (v(c,'locked')===false ? '<span class="chip warn" style="padding:.25rem .6rem">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
+      (v(c,'locked')===false ? '<span class="chip warn" data-act="carlock" style="padding:.25rem .6rem;cursor:pointer">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
     '</div>'+
     '<div class="car-hero"><img src="'+CAR_IMG+'" alt="EV6"></div>'+
     '<div class="car-row">'+
@@ -562,10 +562,10 @@ function renderAlerts(){
   var a = [];
   if(v(D.door,'locked')===false) a.push(['warn','unlock','Ytterdörren är olåst']);
   if(v(D.door,'alarm_contact')) a.push(['bad','alert','Ytterdörren står öppen']);
-  if(v(D.car,'locked')===false) a.push(['warn','car','Bilen är olåst']);
+  if(v(D.car,'locked')===false) a.push(['warn','car','Bilen är olåst','carlock']);
   var co2 = v(D.indoor,'measure_co2'); if(co2>=1400) a.push(['bad','alert','Hög CO₂ i kontoret']);
   var bb = v(D.doorbell,'measure_battery'); if(bb!=null && bb<20) a.push(['warn','alert','Ringklockan: lågt batteri']);
-  $('alerts').innerHTML = a.map(function(x){ return '<span class="chip '+x[0]+'">'+icon(x[1])+x[2]+'</span>'; }).join('');
+  $('alerts').innerHTML = a.map(function(x){ return '<span class="chip '+x[0]+'"'+(x[3]?' data-act="'+x[3]+'" style="cursor:pointer"':'')+'>'+icon(x[1])+x[2]+'</span>'; }).join('');
 }
 
 function render(){
@@ -728,6 +728,7 @@ document.addEventListener('click', function(e){
       CONFIG.lights.forEach(function(L){ L.ids.forEach(function(id){ if(v(id,'onoff')) setCap(id,'onoff',false); }); });
       toast('Alla lampor släcks'); break;
     case 'climate': var c = !v(D.car,'climate_control'); setCap(D.car,'climate_control',c); toast(c?'Förvärmning startas':'Förvärmning stoppas'); break;
+    case 'carlock': if(v(D.car,'locked')===false){ setCap(D.car,'locked',true); toast('Bilen låses'); } break;
     case 'force': setCap(D.force,'onoff',!v(D.force,'onoff')); break;
     case 'lock': if(!v(D.door,'locked')){ setCap(D.door,'locked',true); toast('Ytterdörren låses'); } else toast('Håll in för att låsa upp'); break;
     case 'dimoff': CONFIG.lights[dimIdx].ids.forEach(function(id){ setCap(id,'onoff',false); }); closeDim(); break;
