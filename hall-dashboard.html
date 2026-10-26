@@ -291,7 +291,11 @@ var CONFIG = {
     {name:'Hall',          ids:['ef2ff144-f7f2-4a11-9ff5-31a9493d979a']}
   ],
   priceArea: 'SE2',     // elområde för spotpris (Östersund = SE2)
-  priceVat:  false,     // true = visa spotpris inkl. 25 % moms
+  priceVat:  false,     // (används ej längre för visning – se tariff)
+  // Totalpris enligt Jämtkraft-faktura (sep 2026), öre/kWh exkl. moms:
+  // elhandel: spot (tak 80 per kvart) + påslag 11 − lokalrabatt 3 + rörliga 5,63 = +13,63
+  // elnät: överföring 6 + energiskatt 36 − norrlandsavdrag 9,6 = 32,4
+  tariff: {cap:80, handel:13.63, nat:32.4, vat:1.25},
   appliances: [
     {name:'Diskmaskin',  id:'3c86166a-e849-44dc-be9f-f3c460fcc2d5', icon:'dish',   runW:5},
     {name:'Tvättmaskin', id:'a70e0b24-8530-4cf9-a1d1-fac8b56618f1', icon:'washer', runW:5}
@@ -608,12 +612,13 @@ function hourly(){
   var h = {};
   Object.keys(prices).forEach(function(k){ prices[k].forEach(function(x){
     var d = new Date(x.t); d.setMinutes(0,0,0); var key = d.getTime();
-    (h[key] || (h[key] = [])).push(x.p);
+    (h[key] || (h[key] = [])).push(tot(x.p));
   }); });
   return Object.keys(h).map(Number).sort(function(a,b){ return a-b; }).map(function(k){
     var a = h[k]; return {t:k, p:a.reduce(function(s,x){ return s+x; },0)/a.length};
   });
 }
+function tot(spot){ var T = CONFIG.tariff; return (Math.min(spot, T.cap) + T.handel + T.nat) * T.vat; }
 function ore(p){ return num(p, Math.abs(p)<10?1:0); }
 function hh(t){ return ('0'+new Date(t).getHours()).slice(-2); }
 function span(t){
@@ -622,11 +627,11 @@ function span(t){
 }
 function renderPrice(){
   var el = $('price'); if(!el) return;
-  var head = '<div class="head" style="margin-bottom:.5rem"><h2>'+icon('bolt')+'Elpris '+CONFIG.priceArea+'</h2><span class="sub">öre/kWh · spotpris '+(CONFIG.priceVat?'inkl.':'exkl.')+' moms, utan nät & skatt</span></div>';
+  var head = '<div class="head" style="margin-bottom:.5rem"><h2>'+icon('bolt')+'Elpris '+CONFIG.priceArea+'</h2><span class="sub">öre/kWh · totalpris inkl. nät, skatt & moms · takpris '+CONFIG.tariff.cap+' öre</span></div>';
   var H = hourly(), now = Date.now();
   if(!H.length){ el.innerHTML = head + '<div class="sub">Hämtar elpriser…</div>'; return; }
   var cur = null;
-  Object.keys(prices).forEach(function(k){ prices[k].forEach(function(x){ if(x.t<=now && now<x.t+900000) cur = x.p; }); });
+  Object.keys(prices).forEach(function(k){ prices[k].forEach(function(x){ if(x.t<=now && now<x.t+900000) cur = tot(x.p); }); });
   var hs = new Date(); hs.setMinutes(0,0,0); hs = hs.getTime();
   var fut = H.filter(function(x){ return x.t>=hs; });
   if(!fut.length) fut = H;
