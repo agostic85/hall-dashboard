@@ -657,7 +657,8 @@ function drawChart(H, hs, mn, mx, lvl){
   var box = $('pchart'); var W = box.clientWidth, Hh = box.clientHeight;
   if(!W || !Hh) return;
   var top = 16, bot = 16, ch = Hh-top-bot, n = H.length, bw = W/n, g = Math.max(1, bw*.18);
-  var maxP = 1; H.forEach(function(x){ if(x.p>maxP) maxP = x.p; }); maxP *= 1.08;
+  var capP = tot(CONFIG.tariff.cap);
+  var maxP = capP; H.forEach(function(x){ if(x.p>maxP) maxP = x.p; }); maxP *= 1.08;
   var col = {low:'#3ecf8e', mid:'#f6b84b', high:'#ff6b6b'};
   var s = '<svg viewBox="0 0 '+W+' '+Hh+'" width="'+W+'" height="'+Hh+'">';
   H.forEach(function(x,i){
@@ -673,6 +674,9 @@ function drawChart(H, hs, mn, mx, lvl){
     else if(hr%3===0) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(Hh-3)+'" text-anchor="middle">'+('0'+hr).slice(-2)+'</text>';
     if(x===mn || x===mx) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(yy-4).toFixed(1)+'" text-anchor="middle" style="fill:'+(x===mn?'#3ecf8e':'#ff6b6b')+';font-weight:600">'+ore(x.p)+'</text>';
   });
+  var cy = (top+ch-capP/maxP*ch).toFixed(1);
+  s += '<line x1="0" y1="'+cy+'" x2="'+W+'" y2="'+cy+'" stroke="#eef1f6" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="6 4"/>';
+  s += '<text x="'+(W-2)+'" y="'+(cy-5)+'" text-anchor="end" style="fill:#eef1f6;opacity:.75">Takpris ('+CONFIG.tariff.cap+' öre spot) = '+ore(capP)+' öre</text>';
   box.innerHTML = s + '</svg>';
 }
 window.addEventListener('resize', function(){ renderPrice(); });
