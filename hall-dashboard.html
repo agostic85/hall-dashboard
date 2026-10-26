@@ -124,6 +124,18 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
 .phase i{display:block;height:.3rem;border-radius:99px;background:#262c37;margin-top:.25rem;overflow:hidden}
 .phase i b{display:block;height:100%;background:var(--blue);border-radius:99px}
 
+/* Kalender */
+.cal{display:flex;flex-direction:column}
+.cal-list{flex:1;min-height:0;overflow:auto;margin-top:.2rem}
+.cday{padding:.5rem 0;border-bottom:1px solid var(--line)}
+.cday:last-child{border:0}
+.cday h3{font-size:.78rem;font-weight:600;color:var(--muted);margin-bottom:.2rem}
+.cday.today h3{color:var(--blue)}
+.cev{display:flex;gap:.7rem;font-size:.95rem;line-height:1.35;padding:.1rem 0}
+.cev .ct{flex:none;width:5.4rem;color:var(--muted);font-size:.85rem;padding-top:.08rem;font-variant-numeric:tabular-nums}
+.cev .cs{flex:1;min-width:0;overflow-wrap:anywhere}
+.cempty{font-size:.8rem;color:#5b6475}
+
 /* Appliances */
 .apps{margin-top:.8rem;padding-top:.7rem;border-top:1px solid var(--line)}
 .app-row{padding:.38rem 0 !important}
@@ -205,6 +217,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
     <symbol id="i-washer" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6.5h.01M11 6.5h2"/></symbol>
     <symbol id="i-dish" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8h16M8 5.5h.01M11 5.5h.01M8 13h8"/></symbol>
     <symbol id="i-therm" viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
     <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"/></symbol>
   </defs>
@@ -239,6 +252,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
 
     <section class="col col-right">
       <div class="card energy"><div id="energy"></div></div>
+      <div class="card cal" id="cal" style="flex:1"></div>
     </section>
   </main>
 </div>
@@ -272,6 +286,7 @@ var CONFIG = {
   address: '',          // t.ex. 'http://192.168.1.50' eller 'https://192-168-1-50.homey.homeylocal.com'
   token:   '',          // API-nyckel från Homey (Inställningar → API-nycklar)
   pollMs:  5000,        // hur ofta status hämtas
+  calVar:  '752c7899-166f-4a3c-b474-3eeb5807ff15', // Homey-variabel kalender_vecka (fylls av flödet "Hall-dashboard: hämta kalender")
   nightFrom: 22, nightTo: 6,   // skärmen dimmas mellan dessa timmar
   dev: {
     outdoor:  '163a3cb4-367c-42c6-ba86-c6bd0af6430d', // Torvalla (väder)
@@ -562,6 +577,36 @@ function _unusedPrinters(){
   return h;
 }
 
+/* Veckans kalender (från Homey-variabel, fylls av HomeyScript-flöde) */
+var cal = null, calErr = '';
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function loadCal(){
+  if(DEMO){
+    var b = new Date(), f = function(n){ var d = new Date(b.getFullYear(), b.getMonth(), b.getDate()+n); return ymd(d); };
+    cal = {u:'demo', ev:[{d:f(0),t:'17:00',e:'18:30',s:'Bianca fotboll',a:0},{d:f(1),t:'',e:'',s:'Sofie ledig',a:1},{d:f(1),t:'18:00',e:'19:00',s:'Benjamin innebandy',a:0},{d:f(3),t:'08:15',e:'',s:'Tandläkare',a:0},{d:f(5),t:'',e:'',s:'Födelsedag',a:1}]};
+    renderCal(); return;
+  }
+  api('GET','/manager/logic/variable/'+CONFIG.calVar).then(function(x){
+    cal = JSON.parse(x.value || '{}'); calErr = ''; renderCal();
+  }).catch(function(e){ calErr = e.message; renderCal(); });
+}
+function renderCal(){
+  var el = $('cal'); if(!el) return;
+  var head = '<div class="head"><h2>'+icon('calendar')+'Veckans kalender</h2>'+(cal && cal.u && cal.u!=='demo' ? '<span class="sub">uppdaterad '+cal.u+'</span>' : '')+'</div>';
+  if(!cal || !cal.ev){ el.innerHTML = head + '<div class="sub" style="margin-top:.6rem">'+(calErr ? 'Kunde inte läsa kalendern ('+esc(calErr)+')' : 'Hämtar kalender…')+'</div>'; return; }
+  var t = new Date(), h = '';
+  for(var i=0;i<7;i++){
+    var d = new Date(t.getFullYear(), t.getMonth(), t.getDate()+i), k = ymd(d);
+    var lbl = i===0 ? 'Idag' : i===1 ? 'Imorgon' : d.toLocaleDateString('sv-SE',{weekday:'long', day:'numeric', month:'short'}).replace(/^./, function(c){ return c.toUpperCase(); });
+    var evs = cal.ev.filter(function(x){ return x.d===k; });
+    h += '<div class="cday'+(i===0?' today':'')+'"><h3>'+lbl+'</h3>' + (evs.length ? evs.map(function(x){
+      var tm = x.a ? 'Heldag' : (x.t ? x.t + (x.e ? '–'+x.e : '') : (x.e ? 'till '+x.e : ''));
+      return '<div class="cev"><span class="ct">'+tm+'</span><span class="cs">'+esc(x.s)+'</span></div>';
+    }).join('') : '<div class="cempty">Inget inplanerat</div>') + '</div>';
+  }
+  el.innerHTML = head + '<div class="cal-list">'+h+'</div>';
+}
+
 function renderAlerts(){
   var a = [];
   if(v(D.door,'locked')===false) a.push(['warn','unlock','Ytterdörren är olåst']);
@@ -573,7 +618,7 @@ function renderAlerts(){
 }
 
 function render(){
-  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderAlerts();
+  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderCal(); renderAlerts();
   if(dimIdx!=null) syncDim();
 }
 
@@ -761,6 +806,7 @@ else setConn('', 'Ansluter…');
 renderClock(); setInterval(renderClock, 10000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
 loadPrices(); setInterval(loadPrices, 15*60*1000);
+loadCal(); setInterval(loadCal, 5*60*1000);
 
 /* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
 (function(){
