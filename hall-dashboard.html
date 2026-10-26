@@ -443,6 +443,14 @@ function pushPower(){
 
 /* ===================== Rendering ===================== */
 var MON = {Jan:'jan',Feb:'feb',Mar:'mar',Apr:'apr',May:'maj',Jun:'jun',Jul:'jul',Aug:'aug',Sep:'sep',Oct:'okt',Nov:'nov',Dec:'dec'};
+function ageMin(s){
+  var m = /^([A-Z][a-z]{2}) (\d+) (\d+):(\d+)/.exec(String(s||'')); if(!m) return null;
+  var mi = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].indexOf(m[1]); if(mi<0) return null;
+  var now = new Date(), d = new Date(now.getFullYear(), mi, +m[2], +m[3], +m[4]);
+  if(d - now > 86400000) d.setFullYear(d.getFullYear()-1);
+  return Math.max(0, Math.round((now - d)/60000));
+}
+function agoTxt(min){ return min==null ? '' : min < 1 ? 'nyss' : min < 60 ? min+' min sedan' : min < 1440 ? Math.round(min/60)+' h sedan' : Math.round(min/1440)+' d sedan'; }
 function svDate(s){ if(!s) return '–'; return String(s).replace(/^([A-Z][a-z]{2}) (\d+)/, function(m,a,b){ return b+' '+(MON[a]||a); }); }
 
 function renderClock(){
@@ -508,6 +516,7 @@ function renderCar(){
   var C = 2*Math.PI*42, off = C*(1-b/100);
   var status = charging ? 'Laddar · '+num(chPow/1000)+' kW' : plugged ? 'Inkopplad' : 'Ej inkopplad';
   var clim = !!v(c,'climate_control'), force = !!v(D.force,'onoff');
+  var lr = v(c,'last_refresh'), am = ageMin(lr);
   $('car').innerHTML =
     '<div class="head"><h2>'+icon('car')+'EV6</h2>'+
       (v(c,'locked')===false ? '<span class="chip warn" data-act="carlock" style="padding:.25rem .6rem;cursor:pointer">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
@@ -520,6 +529,7 @@ function renderCar(){
         '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span></div>'+
         '<div class="sub" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+icon('bolt').replace('<svg>','<svg style="width:.9rem;height:.9rem;vertical-align:-2px">')+' '+status+'</div>'+
         '<div class="sub">Avgång '+svDate(v(c,'departure_time'))+'</div>'+
+        '<div class="sub" title="Senaste gången Homey hämtade data från Kia" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
       '</div>'+
     '</div>'+
     '<div class="car-btns">'+
