@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0d1015">
+<title>Hallen</title>
+<style>
+:root{
+  --bg:#0d1015; --card:#161a21; --card2:#1c212a; --line:#262c37;
+  --text:#eef1f6; --muted:#8b94a5; --faint:#5b6475;
+  --warm:#f6b84b; --warm2:#ff9f43; --good:#3ecf8e; --warn:#f6b84b; --bad:#ff6b6b; --blue:#5aa9ff; --violet:#a78bfa;
+  --r:1.15rem; --gap:.8rem;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{font-size:clamp(12px,1.22vw,18px)}
+body{background:var(--bg);color:var(--text);font-family:"SamsungOne",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+  height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;font-variant-numeric:tabular-nums}
+body.night .app{filter:brightness(.55) saturate(.8)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+svg{width:1.25rem;height:1.25rem;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.app{height:100vh;display:flex;flex-direction:column;padding:1rem 1.1rem;gap:var(--gap);transition:filter .6s}
+header{display:flex;align-items:center;gap:1.4rem;padding:0 .3rem}
+.clock{font-size:3.4rem;font-weight:300;letter-spacing:-.03em;line-height:1}
+.date{display:flex;flex-direction:column;gap:.15rem}
+.date b{font-weight:600;font-size:1.1rem}
+.date span{color:var(--muted);font-size:.9rem}
+.alerts{flex:1;display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .8rem;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:.85rem;color:var(--muted)}
+.chip.warn{color:var(--warn);border-color:#4a3a1c;background:#221c12}
+.chip.bad{color:var(--bad);border-color:#4a2228;background:#231416}
+.chip.ok{color:var(--good)}
+.chip svg{width:1rem;height:1rem}
+.status{width:.55rem;height:.55rem;border-radius:50%;background:var(--faint)}
+.status.ok{background:var(--good);box-shadow:0 0 .5rem var(--good)}
+.status.err{background:var(--bad)}
+.status.demo{background:var(--violet)}
+.iconbtn{width:2.6rem;height:2.6rem;border-radius:50%;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);color:var(--muted)}
+
+main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;gap:var(--gap)}
+.col{display:flex;flex-direction:column;gap:var(--gap);min-height:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;min-height:0;position:relative;overflow:hidden}
+.card h2{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;align-items:center;gap:.45rem}
+.card h2 svg{width:1rem;height:1rem}
+.head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.8rem}
+.sub{color:var(--muted);font-size:.85rem}
+.big{font-size:2.6rem;font-weight:300;letter-spacing:-.03em;line-height:1}
+.unit{font-size:1rem;color:var(--muted);margin-left:.15rem;letter-spacing:0}
+
+/* Weather */
+.weather{background:linear-gradient(160deg,#1b2433 0%,var(--card) 70%)}
+.wx-main{display:flex;align-items:flex-end;justify-content:space-between}
+.wx-temp{font-size:3.6rem;font-weight:200;letter-spacing:-.04em;line-height:.9}
+.wx-icon svg{width:3.2rem;height:3.2rem;stroke:var(--blue);stroke-width:1.4}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:.55rem .8rem;margin-top:1rem}
+.kv div{display:flex;align-items:center;gap:.45rem;font-size:.9rem}
+.kv svg{width:1rem;height:1rem;color:var(--muted)}
+.indoor{display:flex;gap:.6rem;margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--line)}
+.indoor div{flex:1}
+.indoor b{display:block;font-size:1.35rem;font-weight:400}
+.indoor small{color:var(--muted);font-size:.75rem}
+.co2-good{color:var(--good)} .co2-ok{color:var(--warn)} .co2-bad{color:var(--bad)}
+
+/* Modes */
+.modes{display:flex;flex-direction:column}
+.mode{display:flex;align-items:center;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--line);font-size:.98rem;width:100%;text-align:left}
+.mode:last-child{border:0}
+.switch{width:2.9rem;height:1.65rem;border-radius:99px;background:#2a303b;position:relative;transition:background .25s}
+.switch::after{content:"";position:absolute;top:.2rem;left:.2rem;width:1.25rem;height:1.25rem;border-radius:50%;background:#c9cfda;transition:transform .25s}
+.on .switch{background:var(--good)}
+.on .switch::after{transform:translateX(1.25rem);background:#fff}
+
+/* Lights */
+.lights{display:flex;flex-direction:column}
+.light-grid{flex:1;display:grid;grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;gap:.6rem;min-height:0}
+.tile{border-radius:1rem;background:var(--card2);border:1px solid var(--line);padding:.8rem .9rem;display:flex;flex-direction:column;justify-content:space-between;text-align:left;transition:background .25s,border-color .25s,transform .12s;position:relative;overflow:hidden}
+.tile:active{transform:scale(.97)}
+.tile .ic{width:3rem;height:3rem;border-radius:50%;display:grid;place-items:center;background:#262c37;color:var(--muted);transition:all .25s}
+.tile .nm{font-weight:600;font-size:1.3rem;line-height:1.2}
+.tile .st{color:var(--muted);font-size:.95rem;margin-top:.15rem}
+.tile.on{background:linear-gradient(150deg,#3a2c14 0%,#2a2218 60%,#221d17 100%);border-color:#5a4520}
+.tile.on .ic{background:var(--warm);color:#2a1d05;box-shadow:0 0 1.2rem rgba(246,184,75,.45)}
+.tile.on .st{color:#e8c98c}
+.tile .bar{position:absolute;left:0;bottom:0;height:3px;background:var(--warm);opacity:.8;transition:width .3s}
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem .9rem;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:.85rem;font-weight:600}
+.btn:active{background:#262c37}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#06172b}
+.btn.active{background:#123a2a;border-color:#1f6b4b;color:var(--good)}
+
+/* Car */
+.car{background:linear-gradient(160deg,#16243a 0%,var(--card) 65%)}
+.car-row{display:flex;align-items:center;gap:1rem}
+.ring{position:relative;width:6.2rem;height:6.2rem;flex:none}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg);stroke-width:7}
+.ring .lbl{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring b{font-size:1.6rem;font-weight:400;line-height:1}
+.ring small{display:block;color:var(--muted);font-size:.7rem;margin-top:.15rem}
+.car-info{flex:1;display:flex;flex-direction:column;gap:.35rem;font-size:.9rem}
+.car-info .range{font-size:1.5rem;font-weight:300}
+.car-btns{display:flex;gap:.5rem;margin-top:.85rem}
+.car-btns .btn{flex:1;justify-content:center}
+
+/* Door */
+.door{display:flex;align-items:center;gap:.9rem;padding:.85rem 1rem}
+.lockbtn{width:3.6rem;height:3.6rem;border-radius:1rem;display:grid;place-items:center;flex:none;position:relative;transition:background .25s}
+.lockbtn svg{width:1.7rem;height:1.7rem}
+.lockbtn.locked{background:#123a2a;color:var(--good)}
+.lockbtn.unlocked{background:#3a2c14;color:var(--warm)}
+.lockbtn .prog{position:absolute;inset:-3px;border-radius:1.15rem;border:3px solid var(--warm);clip-path:inset(0 100% 0 0);transition:none}
+.holding .prog{clip-path:inset(0 0 0 0);transition:clip-path 1.4s linear}
+.door .txt{flex:1}
+.door .txt b{font-size:1.15rem;font-weight:600;display:block}
+
+/* Energy */
+.energy .row{display:flex;align-items:flex-end;justify-content:space-between}
+.spark{width:100%;height:3.2rem;margin-top:.6rem;display:block}
+.spark path.l{stroke:var(--blue);stroke-width:2;fill:none}
+.spark path.a{fill:url(#sg);stroke:none}
+.phases{display:flex;gap:.5rem;margin-top:.55rem}
+.phase{flex:1;font-size:.72rem;color:var(--muted)}
+.phase i{display:block;height:.3rem;border-radius:99px;background:#262c37;margin-top:.25rem;overflow:hidden}
+.phase i b{display:block;height:100%;background:var(--blue);border-radius:99px}
+
+/* Appliances */
+.apps{margin-top:.8rem;padding-top:.7rem;border-top:1px solid var(--line)}
+.app-row{padding:.38rem 0 !important}
+.app-row{display:flex;align-items:center;gap:.7rem;padding:.5rem 0;border-bottom:1px solid var(--line)}
+.app-row:last-child{border:0}
+.app-row .ai{width:2rem;height:2rem;border-radius:.6rem;display:grid;place-items:center;background:var(--card2);color:var(--muted)}
+.app-row .ai svg{width:1.1rem;height:1.1rem}
+.app-row .an{flex:1;font-size:.92rem}
+.app-row .as{font-size:.82rem;color:var(--muted)}
+.app-row.run .ai{background:#13304a;color:var(--blue)}
+.app-row.run .as{color:var(--blue)}
+.app-row.done .as{color:var(--good)}
+.pbar{height:.25rem;border-radius:99px;background:#262c37;margin-top:.3rem;overflow:hidden}
+.pbar b{display:block;height:100%;background:var(--blue)}
+
+/* Sheet + dialog */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10}
+.scrim.show{display:flex}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:1.4rem;padding:1.5rem;width:min(30rem,90vw)}
+.sheet h3{font-size:1.3rem;font-weight:600;margin-bottom:.3rem}
+.dim{-webkit-appearance:none;appearance:none;width:100%;height:4rem;border-radius:1rem;background:linear-gradient(90deg,#3a2c14,var(--warm));margin:1.2rem 0;outline:none}
+.dim::-webkit-slider-thumb{-webkit-appearance:none;width:1.2rem;height:4.4rem;border-radius:.5rem;background:#fff;box-shadow:0 0 .6rem rgba(0,0,0,.5)}
+.field{display:flex;flex-direction:column;gap:.3rem;margin:.8rem 0}
+.field label{font-size:.8rem;color:var(--muted)}
+.field input{font:inherit;padding:.7rem .8rem;border-radius:.7rem;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.sheet .acts{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1rem}
+.toast{position:fixed;left:50%;bottom:1.2rem;opacity:0;pointer-events:none;transform:translateX(-50%) translateY(150%);background:#2a303b;padding:.7rem 1.1rem;border-radius:99px;font-size:.9rem;transition:transform .3s;z-index:20}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:900px),(orientation:portrait){
+  body{overflow:auto;height:auto}
+  .app{height:auto}
+  main{grid-template-columns:1fr 1fr}
+  .col-mid{grid-column:1/-1;order:-1}
+  .light-grid{grid-auto-rows:7.5rem}
+  html{font-size:clamp(13px,2vw,18px)}
+}
+@media (max-width:560px){
+  main{grid-template-columns:1fr}
+  .light-grid{grid-template-columns:1fr 1fr}
+  .clock{font-size:2.6rem}
+  .alerts{display:none}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5aa9ff" stop-opacity=".35"/><stop offset="1" stop-color="#5aa9ff" stop-opacity="0"/></linearGradient>
+    <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2l.1.7h4.8l.1-.7c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-unlock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></symbol>
+    <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 16h14M4 16v-3l2-5h12l2 5v3M6 16v2M18 16v2"/><circle cx="7.5" cy="13" r=".6"/><circle cx="16.5" cy="13" r=".6"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h7"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></symbol>
+    <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15a4 4 0 0 1-.5-8A6 6 0 0 1 18 8a3.5 3.5 0 0 1 0 7M8 18l-1 2M12 18l-1 2M16 18l-1 2"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a5 5 0 0 1-.6-10A6.5 6.5 0 0 1 18.5 9 4.5 4.5 0 0 1 18 18z"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9M6.3 7a8 8 0 1 0 11.4 0"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7M5 10v10h14V10"/></symbol>
+    <symbol id="i-printer" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M12 7v6M9 17h6"/></symbol>
+    <symbol id="i-washer" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6.5h.01M11 6.5h2"/></symbol>
+    <symbol id="i-dish" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8h16M8 5.5h.01M11 5.5h.01M8 13h8"/></symbol>
+    <symbol id="i-therm" viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
+    <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+  <header>
+    <div class="clock" id="clock">--:--</div>
+    <div class="date"><b id="greet">Hej</b><span id="date"></span></div>
+    <div class="alerts" id="alerts"></div>
+    <div class="chip" id="conn"><span class="status" id="dot"></span><span id="connTxt">Startar…</span></div>
+    <button class="iconbtn" id="gear" aria-label="Inställningar"><svg><use href="#i-gear"/></svg></button>
+  </header>
+
+  <main>
+    <section class="col col-left">
+      <div class="card weather" id="weather"></div>
+      <div class="card modes" id="modes"></div>
+      <div class="card" id="printers" style="flex:1"></div>
+    </section>
+
+    <section class="col col-mid">
+      <div class="card lights" style="flex:1">
+        <div class="head">
+          <h2><svg><use href="#i-bulb"/></svg>Belysning <span class="sub" id="lightCount" style="text-transform:none;letter-spacing:0;font-weight:400"></span></h2>
+          <button class="btn" data-act="alloff"><svg><use href="#i-power"/></svg>Släck allt</button>
+        </div>
+        <div class="light-grid" id="lights"></div>
+      </div>
+    </section>
+
+    <section class="col col-right">
+      <div class="card car" id="car"></div>
+      <div class="card door" id="door"></div>
+      <div class="card energy" style="flex:1"><div id="energy"></div><div id="apps" class="apps"></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="scrim" id="dimScrim">
+  <div class="sheet">
+    <h3 id="dimTitle">Ljusstyrka</h3>
+    <div class="sub" id="dimVal">–</div>
+    <input type="range" class="dim" id="dimRange" min="1" max="100" step="1">
+    <div class="acts"><button class="btn" data-act="dimoff">Släck</button><button class="btn primary" data-act="dimclose">Klar</button></div>
+  </div>
+</div>
+
+<div class="scrim" id="setScrim">
+  <div class="sheet">
+    <h3>Anslut till Homey Pro</h3>
+    <div class="sub">Skapa en API-nyckel i Homey: Inställningar → API-nycklar. Sparas bara på den här plattan.</div>
+    <div class="field"><label>Adress (IP eller https-adress)</label><input id="fAddr" placeholder="http://192.168.1.50" inputmode="url" autocomplete="off"></div>
+    <div class="field"><label>API-nyckel</label><input id="fTok" placeholder="xxxxxxxx-…:…" autocomplete="off"></div>
+    <div class="acts"><button class="btn" data-act="setdemo">Demoläge</button><button class="btn" data-act="setclose">Avbryt</button><button class="btn primary" data-act="setsave">Spara & anslut</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   KONFIGURATION – ändra här om du vill byta enheter/ordning.
+   Adress + API-nyckel kan också anges via kugghjulet på plattan.
+   ========================================================= */
+var CONFIG = {
+  address: '',          // t.ex. 'http://192.168.1.50' eller 'https://192-168-1-50.homey.homeylocal.com'
+  token:   '',          // API-nyckel från Homey (Inställningar → API-nycklar)
+  pollMs:  5000,        // hur ofta status hämtas
+  nightFrom: 22, nightTo: 6,   // skärmen dimmas mellan dessa timmar
+  dev: {
+    outdoor:  '163a3cb4-367c-42c6-ba86-c6bd0af6430d', // Torvalla (väder)
+    indoor:   '0426bba8-1bfb-4f8d-ad5b-33f24f4d48a1', // Netatmo inne (kontor)
+    living:   '748fd5ad-ad70-4934-9ccc-670a799b7d68', // Närvarosensor FP300 vardagsrum
+    pulse:    '141c1be9-3c28-409e-a4c3-62fced312fa3', // Tibber Pulse
+    car:      '14c51fec-b777-41de-ab94-1c3cedc48b6e', // EV6
+    charger:  '16df30ab-1360-4b5d-a109-8ed201ef2bf7', // Zaptec
+    force:    '338a7b81-d0c7-4fe5-a0ee-e16881201e93', // Tvinga elbilsladdning?
+    door:     'ce3e36b0-7da7-4dc0-b97a-e94936c25b36', // Ytterdörr
+    doorbell: 'c9f89bb3-8160-4d6b-8316-8f09f6baf019'  // Doorbell G4
+  },
+  lights: [
+    {name:'Vardagsrum',    ids:['4d277998-f12c-4eda-a3fa-873c582fc384']},
+    {name:'Kök',           ids:['38216494-bba1-41f5-a9f4-869dbd3912df','63a43158-8eaf-46e6-8a3e-69f99291795c','6539300d-283c-4ee5-a4ba-87f191849594','6cf9f614-cf27-4f6f-84c1-441f56ca4b97','91fe8d99-e2e4-480f-9bfc-f87d18e06da1','eaf14ef7-1117-4646-bafe-1ca30658cdf2']},
+    {name:'Matbord',       ids:['d135ff19-b4db-4856-aa10-37e5263e5ddd']},
+    {name:'Hall',          ids:['ef2ff144-f7f2-4a11-9ff5-31a9493d979a']}
+  ],
+  modes: [
+    {name:'Gästläge',          id:'60f53675-d519-4105-9261-512b46ca1b88'},
+    {name:'Semesterläge',      id:'ff1f8d42-e899-4136-9f95-0099bf59bc1c'},
+    {name:'Sofie sover',       id:'f1ed805b-8e2f-4ffe-93f6-08c8cf355e8d'},
+    {name:'Pausa automationer',id:'903b9f8b-eb3d-45c0-a497-919b02a5f386'}
+  ],
+  appliances: [
+    {name:'Diskmaskin',  id:'3c86166a-e849-44dc-be9f-f3c460fcc2d5', icon:'dish',   runW:5},
+    {name:'Tvättmaskin', id:'a70e0b24-8530-4cf9-a1d1-fac8b56618f1', icon:'washer', runW:5}
+  ],
+  printers: { x2d:'7002182a-58f0-4986-86a3-c8a67ae0a9a7', u1:'a73ec2f2-9bc4-4032-8fa5-ff5df9fd91ad' }
+};
+
+/* Ögonblicksbild från Homey (26 okt 2026) – används i demoläge */
+var SNAPSHOT = {
+ '163a3cb4-367c-42c6-ba86-c6bd0af6430d':{measure_temperature:6.8,measure_humidity:98.6,measure_wind_strength:1.4,measure_gust_strength:5.2,wind_angle_text:'Östsydöst',measure_rain:0.3},
+ '0426bba8-1bfb-4f8d-ad5b-33f24f4d48a1':{measure_temperature:22.4,measure_humidity:37,measure_co2:1139},
+ '748fd5ad-ad70-4934-9ccc-670a799b7d68':{measure_temperature:21.5,measure_humidity:58.6},
+ '141c1be9-3c28-409e-a4c3-62fced312fa3':{measure_power:843,meter_power:6.3,'measure_current.L1':2.1,'measure_current.L2':0.5,'measure_current.L3':2.2},
+ '14c51fec-b777-41de-ab94-1c3cedc48b6e':{measure_battery:48,measure_range:197,ev_charging_state:'plugged_out',departure_time:'Oct 27 07:40',climate_control:false,locked:false,target_temperature:24,last_refresh:'Oct 26 06:22'},
+ '16df30ab-1360-4b5d-a109-8ed201ef2bf7':{charge_mode:'Disconnected',measure_power:0,'meter_power.current_session':0},
+ '338a7b81-d0c7-4fe5-a0ee-e16881201e93':{onoff:true},
+ 'ce3e36b0-7da7-4dc0-b97a-e94936c25b36':{locked:false,alarm_contact:false},
+ 'c9f89bb3-8160-4d6b-8316-8f09f6baf019':{measure_battery:60},
+ 'ef2ff144-f7f2-4a11-9ff5-31a9493d979a':{onoff:false,dim:1},
+ 'be7d49f7-e8e9-4b7e-859d-38bd737dedae':{onoff:true,dim:.35},
+ '4d277998-f12c-4eda-a3fa-873c582fc384':{onoff:true,dim:.78},
+ '16d1ddf7-ddda-4d03-9c24-4e36f523bd16':{onoff:false,dim:1},
+ '68e30415-a45b-4be4-bd19-4952f835c849':{onoff:false,dim:1},
+ '7ea8340e-a300-4802-8104-2ed449d8a6c3':{onoff:false,dim:1},
+ 'efeead47-4425-478f-87e3-d1d0ed7d4782':{onoff:false,dim:1},
+ '38216494-bba1-41f5-a9f4-869dbd3912df':{onoff:false,dim:.33},
+ '63a43158-8eaf-46e6-8a3e-69f99291795c':{onoff:false,dim:.33},
+ '6539300d-283c-4ee5-a4ba-87f191849594':{onoff:false,dim:.33},
+ '6cf9f614-cf27-4f6f-84c1-441f56ca4b97':{onoff:false,dim:.33},
+ '91fe8d99-e2e4-480f-9bfc-f87d18e06da1':{onoff:false,dim:.33},
+ 'eaf14ef7-1117-4646-bafe-1ca30658cdf2':{onoff:false,dim:.33},
+ 'd135ff19-b4db-4856-aa10-37e5263e5ddd':{onoff:false,dim:.27},
+ 'a917a753-e229-4e73-b21d-0758d01dd36d':{onoff:false,dim:1},
+ '771e79ed-6cf6-4a79-9498-12aa5a66bde9':{onoff:false,dim:.01},
+ 'cca492c8-f5ac-46fe-b275-c9db3cfd7c58':{onoff:true,dim:1},
+ 'f2f8de16-8965-47cb-be65-c27a38a19df3':{onoff:true,dim:.38},
+ '5d4ba947-1c4b-4e66-ba5f-624247bde98a':{onoff:true,dim:.38},
+ 'cc346157-ec08-4473-8d34-40117f3639a9':{onoff:false,dim:.6},
+ '9a1cec32-2ba1-4cec-9438-4e5c7e867058':{onoff:false,dim:.6},
+ '7dd9751c-2936-4940-b209-b827956eb3f8':{onoff:false,dim:.3},
+ '60f53675-d519-4105-9261-512b46ca1b88':{onoff:false},
+ 'ff1f8d42-e899-4136-9f95-0099bf59bc1c':{onoff:false},
+ 'f1ed805b-8e2f-4ffe-93f6-08c8cf355e8d':{onoff:true},
+ '903b9f8b-eb3d-45c0-a497-919b02a5f386':{onoff:false},
+ '3c86166a-e849-44dc-be9f-f3c460fcc2d5':{measure_power:0.3},
+ 'a70e0b24-8530-4cf9-a1d1-fac8b56618f1':{measure_power:0.2},
+ '7002182a-58f0-4986-86a3-c8a67ae0a9a7':{bambu_progress_percentage:100,bambu_progress_time_remaining:'0 min','measure_temperature.nozzle':29},
+ 'a73ec2f2-9bc4-4032-8fa5-ff5df9fd91ad':{printer_status:'disconnected',printer_job_progress:0}
+};
+
+/* ===================== Motor ===================== */
+var LS = 'hallDash.v1';
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
+function saveLocal(o){ try{ localStorage.setItem(LS, JSON.stringify(o)); }catch(e){} }
+var local = loadLocal();
+var cfg = { address: local.address || CONFIG.address, token: local.token || CONFIG.token };
+var DEMO = !(cfg.address && cfg.token);
+var state = JSON.parse(JSON.stringify(SNAPSHOT));
+var pending = {};          // undviker flimmer direkt efter ett klick
+var powerHist = [];
+var holding = false;
+var D = CONFIG.dev;
+
+function $(id){ return document.getElementById(id); }
+function v(id, cap){ var s = state[id]; return s ? s[cap] : undefined; }
+function num(n, d){ if(n==null||isNaN(n)) return '–'; return Number(n).toLocaleString('sv-SE',{maximumFractionDigits:d==null?1:d, minimumFractionDigits:0}); }
+function icon(n){ return '<svg><use href="#i-'+n+'"/></svg>'; }
+function toast(t){ var e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){e.classList.remove('show');},2200); }
+
+function api(method, path, body){
+  var base = cfg.address.replace(/\/+$/,'');
+  return fetch(base + '/api' + path, {
+    method: method,
+    headers: {'Authorization':'Bearer '+cfg.token, 'Content-Type':'application/json'},
+    body: body ? JSON.stringify(body) : undefined
+  }).then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.status===204 ? null : r.json();
+  });
+}
+
+function setConn(kind, txt){
+  $('dot').className = 'status ' + kind;
+  $('connTxt').textContent = txt;
+}
+
+function poll(){
+  if(DEMO){
+    var p = v(D.pulse,'measure_power') || 800;
+    state[D.pulse].measure_power = Math.max(250, Math.round(p + (843-p)*.15 + (Math.random()-.5)*140));
+    pushPower(); render(); return;
+  }
+  api('GET','/manager/devices/device/').then(function(devs){
+    var now = Date.now();
+    Object.keys(devs).forEach(function(id){
+      var caps = devs[id].capabilitiesObj || {};
+      var s = state[id] || (state[id] = {});
+      Object.keys(caps).forEach(function(c){
+        if(pending[id+'|'+c] && now - pending[id+'|'+c] < 4000) return;
+        s[c] = caps[c].value;
+      });
+    });
+    setConn('ok','Ansluten');
+    pushPower(); render();
+  }).catch(function(e){
+    setConn('err', 'Ingen kontakt (' + (e.message||'fel') + ')');
+  });
+}
+
+function setCap(id, cap, value){
+  (state[id] || (state[id] = {}))[cap] = value;
+  pending[id+'|'+cap] = Date.now();
+  render();
+  if(DEMO) return Promise.resolve();
+  return api('PUT','/manager/devices/device/'+id+'/capability/'+cap, {value:value})
+    .catch(function(e){ toast('Kunde inte styra enheten ('+e.message+')'); });
+}
+
+function pushPower(){
+  var p = v(D.pulse,'measure_power');
+  if(p==null) return;
+  powerHist.push(p);
+  if(powerHist.length > 360) powerHist.shift();   // ~30 min vid 5 s
+}
+
+/* ===================== Rendering ===================== */
+var MON = {Jan:'jan',Feb:'feb',Mar:'mar',Apr:'apr',May:'maj',Jun:'jun',Jul:'jul',Aug:'aug',Sep:'sep',Oct:'okt',Nov:'nov',Dec:'dec'};
+function svDate(s){ if(!s) return '–'; return String(s).replace(/^([A-Z][a-z]{2}) (\d+)/, function(m,a,b){ return b+' '+(MON[a]||a); }); }
+
+function renderClock(){
+  var d = new Date(), h = d.getHours();
+  $('clock').textContent = d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+  var ds = d.toLocaleDateString('sv-SE',{weekday:'long',day:'numeric',month:'long'}); $('date').textContent = ds.charAt(0).toUpperCase()+ds.slice(1);
+  $('greet').textContent = h<5?'God natt':h<10?'God morgon':h<17?'Hej':h<22?'God kväll':'God natt';
+  var night = CONFIG.nightFrom > CONFIG.nightTo ? (h>=CONFIG.nightFrom || h<CONFIG.nightTo) : (h>=CONFIG.nightFrom && h<CONFIG.nightTo);
+  document.body.classList.toggle('night', night);
+}
+
+function renderWeather(){
+  var o = D.outdoor, rain = v(o,'measure_rain')||0;
+  var co2 = v(D.indoor,'measure_co2');
+  var cc = co2==null?'':co2<1000?'co2-good':co2<1400?'co2-ok':'co2-bad';
+  $('weather').innerHTML =
+    '<div class="head"><h2>'+icon('cloud')+'Ute · Torvalla</h2></div>'+
+    '<div class="wx-main"><div class="wx-temp">'+num(v(o,'measure_temperature'))+'°</div><div class="wx-icon">'+icon(rain>0?'rain':'cloud')+'</div></div>'+
+    '<div class="kv">'+
+      '<div>'+icon('wind')+num(v(o,'measure_wind_strength'))+' m/s</div>'+
+      '<div class="sub">byar '+num(v(o,'measure_gust_strength'))+'</div>'+
+      '<div>'+icon('rain')+num(rain)+' mm</div>'+
+      '<div>'+icon('drop')+num(v(o,'measure_humidity'),0)+' %</div>'+
+    '</div>'+
+    '<div class="indoor">'+
+      '<div><small>Vardagsrum</small><b>'+num(v(D.living,'measure_temperature'))+'°</b></div>'+
+      '<div><small>Kontor</small><b>'+num(v(D.indoor,'measure_temperature'))+'°</b></div>'+
+      '<div><small>CO₂ kontor</small><b class="'+cc+'">'+num(co2,0)+'</b></div>'+
+    '</div>';
+}
+
+function renderModes(){
+  var h = '<div class="head"><h2>'+icon('home')+'Lägen</h2></div>';
+  CONFIG.modes.forEach(function(m,i){
+    var on = !!v(m.id,'onoff');
+    h += '<button class="mode'+(on?' on':'')+'" data-act="mode" data-i="'+i+'"><span>'+m.name+'</span><span class="switch"></span></button>';
+  });
+  $('modes').innerHTML = h;
+}
+
+function lightInfo(L){
+  var on = 0, dimSum = 0, dimN = 0;
+  L.ids.forEach(function(id){
+    if(v(id,'onoff')){ on++; var d=v(id,'dim'); if(d!=null){ dimSum+=d; dimN++; } }
+  });
+  return {on:on, total:L.ids.length, dim: dimN ? Math.round(dimSum/dimN*100) : null};
+}
+
+function renderLights(){
+  var h = '', tilesOn = 0;
+  CONFIG.lights.forEach(function(L,i){
+    var inf = lightInfo(L), on = inf.on>0;
+    if(on) tilesOn++;
+    var st = !on ? 'Släckt' : (inf.total>1 && inf.on<inf.total ? inf.on+' av '+inf.total+' tända' : (inf.dim!=null ? inf.dim+' %' : 'Tänd'));
+    h += '<button class="tile'+(on?' on':'')+'" data-act="light" data-i="'+i+'">'+
+           '<span class="ic">'+icon('bulb')+'</span>'+
+           '<span><div class="nm">'+L.name+'</div><div class="st">'+st+'</div></span>'+
+           (on && inf.dim!=null ? '<span class="bar" style="width:'+inf.dim+'%"></span>' : '')+
+         '</button>';
+  });
+  $('lights').innerHTML = h;
+  $('lightCount').textContent = tilesOn ? '· '+tilesOn+' tända' : '· allt släckt';
+}
+
+function renderCar(){
+  var c = D.car, b = v(c,'measure_battery')||0, st = v(c,'ev_charging_state');
+  var chPow = v(D.charger,'measure_power')||0;
+  var charging = (st && /charg/i.test(st) && !/not|stop/i.test(st)) || chPow > 100;
+  var plugged = st && st!=='plugged_out';
+  var col = b<20?'var(--bad)':b<40?'var(--warn)':'var(--blue)';
+  var C = 2*Math.PI*42, off = C*(1-b/100);
+  var status = charging ? 'Laddar · '+num(chPow/1000)+' kW' : plugged ? 'Inkopplad' : 'Ej inkopplad';
+  var clim = !!v(c,'climate_control'), force = !!v(D.force,'onoff');
+  $('car').innerHTML =
+    '<div class="head"><h2>'+icon('car')+'EV6</h2>'+
+      (v(c,'locked')===false ? '<span class="chip warn" style="padding:.25rem .6rem">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
+    '</div>'+
+    '<div class="car-row">'+
+      '<div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" stroke="#262c37"/><circle cx="50" cy="50" r="42" stroke="'+col+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" style="transition:stroke-dashoffset .6s"/></svg>'+
+        '<div class="lbl"><div><b>'+num(b,0)+'%</b><small>batteri</small></div></div></div>'+
+      '<div class="car-info">'+
+        '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span></div>'+
+        '<div class="sub" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+icon('bolt').replace('<svg>','<svg style="width:.9rem;height:.9rem;vertical-align:-2px">')+' '+status+'</div>'+
+        '<div class="sub">Avgång '+svDate(v(c,'departure_time'))+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="car-btns">'+
+      '<button class="btn'+(clim?' active':'')+'" data-act="climate">'+icon('fire')+(clim?'Förvärmer':'Förvärm')+'</button>'+
+      '<button class="btn'+(force?' active':'')+'" data-act="force">'+icon('bolt')+'Tvångsladda</button>'+
+    '</div>';
+}
+
+function renderDoor(){
+  if(holding) return;
+  var locked = v(D.door,'locked'), open = v(D.door,'alarm_contact');
+  var bell = v(D.doorbell,'measure_battery');
+  $('door').innerHTML =
+    '<button class="lockbtn '+(locked?'locked':'unlocked')+'" data-act="lock" id="lockBtn">'+icon(locked?'lock':'unlock')+'<span class="prog"></span></button>'+
+    '<div class="txt"><b>Ytterdörr '+(locked?'låst':'olåst')+'</b>'+
+      '<span class="sub">'+(open?'Dörren står öppen':(locked?'Håll in för att låsa upp':'Tryck för att låsa'))+'</span></div>'+
+    '<div class="sub" style="text-align:right">Ringklocka<br>'+num(bell,0)+' %</div>';
+}
+
+function renderEnergy(){
+  var p = v(D.pulse,'measure_power'), today = v(D.pulse,'meter_power');
+  var path = '', area = '';
+  if(powerHist.length>1){
+    var max = Math.max.apply(null,powerHist)*1.15, min = Math.min.apply(null,powerHist)*.85, n = powerHist.length;
+    var pts = powerHist.map(function(y,i){ return [(i/(n-1))*100, 40 - ((y-min)/((max-min)||1))*36]; });
+    path = 'M'+pts.map(function(q){return q[0].toFixed(2)+' '+q[1].toFixed(2);}).join(' L');
+    area = path + ' L100 40 L0 40 Z';
+  }
+  var ph = ['L1','L2','L3'].map(function(k){
+    var a = v(D.pulse,'measure_current.'+k)||0;
+    return '<div class="phase">'+k+' · '+num(a)+' A<i><b style="width:'+Math.min(100,a/16*100)+'%"></b></i></div>';
+  }).join('');
+  $('energy').innerHTML =
+    '<div class="head" style="margin-bottom:.4rem"><h2>'+icon('bolt')+'Effekt just nu</h2><span class="sub">Idag '+num(today)+' kWh</span></div>'+
+    '<div class="row"><div class="big">'+(p>=1000?num(p/1000,2):num(p,0))+'<span class="unit">'+(p>=1000?'kW':'W')+'</span></div></div>'+
+    '<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none"><path class="a" d="'+area+'"/><path class="l" d="'+path+'" vector-effect="non-scaling-stroke"/></svg>'+
+    '<div class="phases">'+ph+'</div>';
+}
+
+function renderApps(){
+  var h = '';
+  CONFIG.appliances.forEach(function(a){
+    var w = v(a.id,'measure_power')||0, run = w > a.runW;
+    h += '<div class="app-row'+(run?' run':'')+'"><span class="ai">'+icon(a.icon)+'</span><span class="an">'+a.name+'</span>'+
+         '<span class="as">'+(run?'Kör · '+num(w,0)+' W':'Av')+'</span></div>';
+  });
+  $('apps').innerHTML = h;
+  h = '<div class="head" style="margin-bottom:.3rem"><h2>'+icon('printer')+'3D-skrivare</h2></div>';
+  var x = CONFIG.printers.x2d, pr = v(x,'bambu_progress_percentage'), rem = v(x,'bambu_progress_time_remaining');
+  var xRun = pr!=null && pr<100 && rem && rem!=='0 min';
+  h += '<div class="app-row'+(xRun?' run':(pr===100?' done':''))+'"><span class="ai">'+icon('printer')+'</span><span class="an">X2D'+
+       (xRun?'<div class="pbar"><b style="width:'+pr+'%"></b></div>':'')+'</span>'+
+       '<span class="as">'+(xRun? pr+' % · '+rem : pr===100?'Klar':'Ledig')+'</span></div>';
+  var u = CONFIG.printers.u1, us = v(u,'printer_status'), up = v(u,'printer_job_progress')||0;
+  var uRun = us && /print/i.test(us);
+  h += '<div class="app-row'+(uRun?' run':'')+'"><span class="ai">'+icon('printer')+'</span><span class="an">Snapmaker U1'+
+       (uRun?'<div class="pbar"><b style="width:'+up+'%"></b></div>':'')+'</span>'+
+       '<span class="as">'+(uRun? num(up,0)+' %' : us==='disconnected'?'Frånkopplad':(us||'–'))+'</span></div>';
+  $('printers').innerHTML = h;
+}
+
+function renderAlerts(){
+  var a = [];
+  if(v(D.door,'locked')===false) a.push(['warn','unlock','Ytterdörren är olåst']);
+  if(v(D.door,'alarm_contact')) a.push(['bad','alert','Ytterdörren står öppen']);
+  if(v(D.car,'locked')===false) a.push(['warn','car','Bilen är olåst']);
+  var co2 = v(D.indoor,'measure_co2'); if(co2>=1400) a.push(['bad','alert','Hög CO₂ i kontoret']);
+  var bb = v(D.doorbell,'measure_battery'); if(bb!=null && bb<20) a.push(['warn','alert','Ringklockan: lågt batteri']);
+  $('alerts').innerHTML = a.map(function(x){ return '<span class="chip '+x[0]+'">'+icon(x[1])+x[2]+'</span>'; }).join('');
+}
+
+function render(){
+  renderWeather(); renderModes(); renderLights(); renderCar(); renderDoor(); renderEnergy(); renderApps(); renderAlerts();
+  if(dimIdx!=null) syncDim();
+}
+
+/* ===================== Interaktion ===================== */
+var dimIdx = null, pressTimer = null, longFired = false, unlockTimer = null;
+
+function toggleLight(i){
+  var L = CONFIG.lights[i], anyOn = lightInfo(L).on > 0;
+  L.ids.forEach(function(id){ setCap(id,'onoff',!anyOn); });
+}
+function openDim(i){
+  dimIdx = i; $('dimTitle').textContent = CONFIG.lights[i].name; syncDim();
+  $('dimScrim').classList.add('show');
+}
+function syncDim(){
+  var inf = lightInfo(CONFIG.lights[dimIdx]);
+  var d = inf.dim!=null ? inf.dim : Math.round((v(CONFIG.lights[dimIdx].ids[0],'dim')||1)*100);
+  if(document.activeElement !== $('dimRange')) $('dimRange').value = d;
+  $('dimVal').textContent = inf.on ? d+' %' : 'Släckt';
+}
+$('dimRange').addEventListener('input', function(){ $('dimVal').textContent = this.value+' %'; });
+$('dimRange').addEventListener('change', function(){
+  var val = this.value/100;
+  CONFIG.lights[dimIdx].ids.forEach(function(id){ setCap(id,'dim',val); if(!v(id,'onoff')) setCap(id,'onoff',true); });
+});
+
+document.addEventListener('pointerdown', function(e){
+  var t = e.target.closest('[data-act]'); if(!t) return;
+  longFired = false;
+  if(t.dataset.act==='light'){
+    pressTimer = setTimeout(function(){ longFired = true; openDim(+t.dataset.i); }, 550);
+  }
+  if(t.dataset.act==='lock' && v(D.door,'locked')){
+    holding = true; t.parentNode.classList.add('holding');
+    unlockTimer = setTimeout(function(){
+      longFired = true; holding = false;
+      setCap(D.door,'locked',false); toast('Ytterdörren låses upp');
+    }, 1400);
+  }
+});
+function cancelPress(){
+  clearTimeout(pressTimer);
+  if(unlockTimer){ clearTimeout(unlockTimer); unlockTimer=null; }
+  if(holding){ holding=false; $('door').classList.remove('holding'); renderDoor(); }
+}
+document.addEventListener('pointerup', cancelPress);
+document.addEventListener('pointercancel', cancelPress);
+document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+
+document.addEventListener('click', function(e){
+  var t = e.target.closest('[data-act]'); if(!t) return;
+  if(longFired){ longFired=false; return; }
+  var act = t.dataset.act;
+  switch(act){
+    case 'light': toggleLight(+t.dataset.i); break;
+    case 'mode': var m = CONFIG.modes[+t.dataset.i]; setCap(m.id,'onoff',!v(m.id,'onoff')); break;
+    case 'alloff':
+      CONFIG.lights.forEach(function(L){ L.ids.forEach(function(id){ if(v(id,'onoff')) setCap(id,'onoff',false); }); });
+      toast('Alla lampor släcks'); break;
+    case 'climate': var c = !v(D.car,'climate_control'); setCap(D.car,'climate_control',c); toast(c?'Förvärmning startas':'Förvärmning stoppas'); break;
+    case 'force': setCap(D.force,'onoff',!v(D.force,'onoff')); break;
+    case 'lock': if(!v(D.door,'locked')){ setCap(D.door,'locked',true); toast('Ytterdörren låses'); } else toast('Håll in för att låsa upp'); break;
+    case 'dimoff': CONFIG.lights[dimIdx].ids.forEach(function(id){ setCap(id,'onoff',false); }); closeDim(); break;
+    case 'dimclose': closeDim(); break;
+    case 'setclose': $('setScrim').classList.remove('show'); break;
+    case 'setsave':
+      saveLocal({address:$('fAddr').value.trim(), token:$('fTok').value.trim()}); location.reload(); break;
+    case 'setdemo': saveLocal({}); location.reload(); break;
+  }
+});
+function closeDim(){ $('dimScrim').classList.remove('show'); dimIdx = null; }
+$('dimScrim').addEventListener('click', function(e){ if(e.target===this) closeDim(); });
+$('gear').addEventListener('click', function(){
+  $('fAddr').value = cfg.address; $('fTok').value = cfg.token;
+  $('setScrim').classList.add('show');
+});
+
+/* ===================== Start ===================== */
+if(DEMO){ setConn('demo','Demoläge'); for(var k=0;k<40;k++){ poll(); } }
+else setConn('', 'Ansluter…');
+renderClock(); setInterval(renderClock, 10000);
+render(); poll(); setInterval(poll, CONFIG.pollMs);
+
+/* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
+(function(){
+  var src=null, cur=null;
+  try{ src=localStorage.getItem('hallDash.src'); cur=localStorage.getItem('hallDash.cache'); }catch(e){}
+  if(!src) return;
+  setInterval(function(){
+    fetch(src+'?t='+Date.now(),{cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.text(); })
+      .then(function(h){ if(cur && h!==cur && h.indexOf('</html>')>0){ try{localStorage.setItem('hallDash.cache',h);}catch(e){} location.reload(); } })
+      .catch(function(){});
+  }, 10*60*1000);
+})();
+</script>
+</body>
+</html>
