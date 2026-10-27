@@ -414,7 +414,7 @@ function poll(){
       var s = state[id] || (state[id] = {});
       Object.keys(caps).forEach(function(c){
         if(pending[id+'|'+c] && now - pending[id+'|'+c] < 4000) return;
-        s[c] = caps[c].value;
+        s[c] = caps[c].value; if(caps[c].lastUpdated) s['_lu_'+c] = caps[c].lastUpdated;
       });
     });
     setConn('ok','Ansluten');
@@ -451,6 +451,7 @@ function ageMin(s){
   return Math.max(0, Math.round((now - d)/60000));
 }
 function agoTxt(min){ return min==null ? '' : min < 1 ? 'nyss' : min < 60 ? min+' min sedan' : min < 1440 ? Math.round(min/60)+' h sedan' : Math.round(min/1440)+' d sedan'; }
+function fmtTs(t, am){ var d = new Date(t), hm = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); return am<1200 ? hm : d.getDate()+' '+['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]+' '+hm; }
 function svDate(s){ if(!s) return '–'; return String(s).replace(/^([A-Z][a-z]{2}) (\d+)/, function(m,a,b){ return b+' '+(MON[a]||a); }); }
 
 function renderClock(){
@@ -516,7 +517,9 @@ function renderCar(){
   var C = 2*Math.PI*42, off = C*(1-b/100);
   var status = charging ? 'Laddar · '+num(chPow/1000)+' kW' : plugged ? 'Inkopplad' : 'Ej inkopplad';
   var clim = !!v(c,'climate_control'), force = !!v(D.force,'onoff');
-  var lr = v(c,'last_refresh'), am = ageMin(lr);
+  var lr = v(c,'last_refresh'), am = ageMin(lr), lu = 0, st0 = state[c] || {};
+  Object.keys(st0).forEach(function(k){ if(k.indexOf('_lu_')===0 && k!=='_lu_last_refresh'){ var t = Date.parse(st0[k]); if(t > lu) lu = t; } });
+  if(lu) am = Math.max(0, Math.round((Date.now()-lu)/60000));
   $('car').innerHTML =
     '<div class="head"><h2>'+icon('car')+'EV6</h2>'+
       (v(c,'locked')===false ? '<span class="chip warn" data-act="carlock" style="padding:.25rem .6rem;cursor:pointer">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
@@ -529,7 +532,7 @@ function renderCar(){
         '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span></div>'+
         '<div class="sub" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+icon('bolt').replace('<svg>','<svg style="width:.9rem;height:.9rem;vertical-align:-2px">')+' '+status+'</div>'+
         '<div class="sub">Avgång '+svDate(v(c,'departure_time'))+'</div>'+
-        '<div class="sub" title="Senaste gången Homey hämtade data från Kia" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
+        '<div class="sub" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr)))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
       '</div>'+
     '</div>'+
     '<div class="car-btns">'+
