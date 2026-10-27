@@ -452,6 +452,11 @@ function ageMin(s){
 }
 function agoTxt(min){ return min==null ? '' : min < 1 ? 'nyss' : min < 60 ? min+' min sedan' : min < 1440 ? Math.round(min/60)+' h sedan' : Math.round(min/1440)+' d sedan'; }
 function fmtTs(t, am){ var d = new Date(t), hm = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); return am<1200 ? hm : d.getDate()+' '+['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]+' '+hm; }
+var OFFICE_SENSOR = 'c5812be5-52d1-41d1-a8d2-447b48ddf641'; // Närvarosensor Kontor (Aqara FP300)
+function fresh(id, cap, maxMin){ var s = state[id]; if(!s || s[cap]==null) return false; var lu = s['_lu_'+cap]; return !lu || (Date.now()-Date.parse(lu)) < maxMin*60000; }
+function netatmoOk(){ return fresh(D.indoor, 'measure_co2', 120); }   // Netatmo räknas som frånkopplad om CO₂ inte ändrats på 2 h
+function officeTemp(){ var t = v(OFFICE_SENSOR,'measure_temperature'); return t!=null ? t : (netatmoOk() ? v(D.indoor,'measure_temperature') : null); }
+function officeHum(){ var h = v(OFFICE_SENSOR,'measure_humidity'); return h!=null ? h : (netatmoOk() ? v(D.indoor,'measure_humidity') : null); }
 function svDate(s){ if(!s) return '–'; return String(s).replace(/^([A-Z][a-z]{2}) (\d+)/, function(m,a,b){ return b+' '+(MON[a]||a); }); }
 
 function renderClock(){
@@ -465,7 +470,7 @@ function renderClock(){
 
 function renderWeather(){
   var o = D.outdoor, rain = v(o,'measure_rain')||0;
-  var co2 = v(D.indoor,'measure_co2');
+  var co2 = netatmoOk() ? v(D.indoor,'measure_co2') : null;
   var cc = co2==null?'':co2<1000?'co2-good':co2<1400?'co2-ok':'co2-bad';
   $('weather').innerHTML =
     '<div class="head"><h2>'+icon('cloud')+'Ute · Torvalla</h2></div>'+
@@ -478,7 +483,7 @@ function renderWeather(){
     '</div>'+
     '<div class="indoor">'+
       '<div><small>Vardagsrum</small><b>'+num(v(D.living,'measure_temperature'))+'°</b></div>'+
-      '<div><small>Kontor</small><b>'+num(v(D.indoor,'measure_temperature'))+'°</b></div>'+
+      '<div><small>Kontor</small><b>'+num(officeTemp())+'°</b></div>'+
       '<div><small>CO₂ kontor</small><b class="'+cc+'">'+num(co2,0)+'</b></div>'+
     '</div>';
 }
@@ -631,7 +636,7 @@ function renderAlerts(){
   if(v(D.door,'locked')===false) a.push(['warn','unlock','Ytterdörren är olåst']);
   if(v(D.door,'alarm_contact')) a.push(['bad','alert','Ytterdörren står öppen']);
   if(v(D.car,'locked')===false) a.push(['warn','car','Bilen är olåst','carlock']);
-  var co2 = v(D.indoor,'measure_co2'); if(co2>=1400) a.push(['bad','alert','Hög CO₂ i kontoret']);
+  var co2 = netatmoOk() ? v(D.indoor,'measure_co2') : null; if(co2>=1400) a.push(['bad','alert','Hög CO₂ i kontoret']);
   var bb = v(D.doorbell,'measure_battery'); if(bb!=null && bb<20) a.push(['warn','alert','Ringklockan: lågt batteri']);
   $('alerts').innerHTML = a.map(function(x){ return '<span class="chip '+x[0]+'"'+(x[3]?' data-act="'+x[3]+'" style="cursor:pointer"':'')+'>'+icon(x[1])+x[2]+'</span>'; }).join('');
 }
