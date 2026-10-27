@@ -405,14 +405,14 @@ CONFIG = {
   dev: {
     indoor:   '0426bba8-1bfb-4f8d-ad5b-33f24f4d48a1', // Netatmo inne (kontor)
     vind:     'c339a38e-899c-4fdd-9193-9ff6a413b2b9', // VINDSTYRKA
-    purifier: '9c27d2b3-15de-4141-a252-7a44f69bdf3c', // Ström Luftrenare
+    purifier: '00e65144-1269-409e-83ee-89e004292298', // Ström Luftrenare
     car:      '14c51fec-b777-41de-ab94-1c3cedc48b6e', // EV6
     charger:  '16df30ab-1360-4b5d-a109-8ed201ef2bf7', // Zaptec
     force:    '338a7b81-d0c7-4fe5-a0ee-e16881201e93', // Tvinga elbilsladdning?
     x2d:      '7002182a-58f0-4986-86a3-c8a67ae0a9a7', // Bambu X2D
     u1:       'a73ec2f2-9bc4-4032-8fa5-ff5df9fd91ad', // Snapmaker U1
     x2dPlug:  '2bdbcd1f-2064-4b1c-973d-69a12852ebed', // Ström X2D
-    u1Plug:   '91ed843b-7a00-4856-b5da-589f8bcd98b4', // Ström U1
+    u1Plug:   'e8e35911-cecf-45a6-ad8a-ec822c78a4f9', // Ström U1
     pulse:    '141c1be9-3c28-409e-a4c3-62fced312fa3', // Tibber Pulse (används i demoläge)
     curtain:  'aed14cdd-fb03-4d4c-a6e9-66f3673baaf9'  // Gardin sovrum
   },
@@ -480,11 +480,11 @@ var SNAPSHOT = {
 Object.assign(SNAPSHOT, {
  '0426bba8-1bfb-4f8d-ad5b-33f24f4d48a1':{measure_temperature:22.4,measure_humidity:37,measure_co2:1139,measure_noise:46,measure_pressure:1022},
  'c339a38e-899c-4fdd-9193-9ff6a413b2b9':{measure_humidity:42,measure_pm25:1,measure_temperature:22,measure_voc:103},
- '9c27d2b3-15de-4141-a252-7a44f69bdf3c':{onoff:false,measure_power:0},
+ '00e65144-1269-409e-83ee-89e004292298':{onoff:false,measure_power:0},
  '7002182a-58f0-4986-86a3-c8a67ae0a9a7':{bambu_progress_percentage:100,bambu_progress_time_remaining:'0 min',bambu_print_layers:'63 / 63','measure_temperature.nozzle':29,'measure_temperature.bed':28,'measure_temperature.chamber':27,'measure_temperature.nozzle_target':0,'onoff.light_chamber':true},
  'a73ec2f2-9bc4-4032-8fa5-ff5df9fd91ad':{printer_status:'disconnected',printer_job_name:'',printer_job_progress:0,printer_job_eta:0,printer_hotend_temperature:25,printer_bed_temperature:23,'measure_temperature.temperature_sensor_cavity':23},
  '2bdbcd1f-2064-4b1c-973d-69a12852ebed':{onoff:true,measure_power:22.4},
- '91ed843b-7a00-4856-b5da-589f8bcd98b4':{onoff:true,measure_power:12.6},
+ 'e8e35911-cecf-45a6-ad8a-ec822c78a4f9':{onoff:true,measure_power:12.6},
  'aed14cdd-fb03-4d4c-a6e9-66f3673baaf9':{windowcoverings_state:'down',windowcoverings_closed:true,measure_battery:87},
  '2dcac41c-ab20-4e31-9914-5489b739c08a':{onoff:false,dim:1},
  '3832acad-a116-4f00-8683-8f1c12d4e3d9':{onoff:false,dim:1},
@@ -549,7 +549,7 @@ function poll(){
       var s = state[id] || (state[id] = {});
       Object.keys(caps).forEach(function(c){
         if(pending[id+'|'+c] && now - pending[id+'|'+c] < 4000) return;
-        s[c] = caps[c].value;
+        s[c] = caps[c].value; if(caps[c].lastUpdated) s['_lu_'+c] = caps[c].lastUpdated;
       });
     });
     setConn('ok','Ansluten');
@@ -586,6 +586,7 @@ function ageMin(s){
   return Math.max(0, Math.round((now - d)/60000));
 }
 function agoTxt(min){ return min==null ? '' : min < 1 ? 'nyss' : min < 60 ? min+' min sedan' : min < 1440 ? Math.round(min/60)+' h sedan' : Math.round(min/1440)+' d sedan'; }
+function fmtTs(t, am){ var d = new Date(t), hm = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); return am<1200 ? hm : d.getDate()+' '+['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]+' '+hm; }
 function svDate(s){ if(!s) return '–'; return String(s).replace(/^([A-Z][a-z]{2}) (\d+)/, function(m,a,b){ return b+' '+(MON[a]||a); }); }
 
 function renderClock(){
@@ -651,7 +652,9 @@ function renderCar(){
   var C = 2*Math.PI*42, off = C*(1-b/100);
   var status = charging ? 'Laddar · '+num(chPow/1000)+' kW' : plugged ? 'Inkopplad' : 'Ej inkopplad';
   var clim = !!v(c,'climate_control'), force = !!v(D.force,'onoff');
-  var lr = v(c,'last_refresh'), am = ageMin(lr);
+  var lr = v(c,'last_refresh'), am = ageMin(lr), lu = 0, st0 = state[c] || {};
+  Object.keys(st0).forEach(function(k){ if(k.indexOf('_lu_')===0 && k!=='_lu_last_refresh'){ var t = Date.parse(st0[k]); if(t > lu) lu = t; } });
+  if(lu) am = Math.max(0, Math.round((Date.now()-lu)/60000));
   $('car').innerHTML =
     '<div class="head"><h2>'+icon('car')+'EV6</h2>'+
       (v(c,'locked')===false ? '<span class="chip warn" data-act="carlock" style="padding:.25rem .6rem;cursor:pointer">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
@@ -664,7 +667,7 @@ function renderCar(){
         '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span></div>'+
         '<div class="sub" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+icon('bolt').replace('<svg>','<svg style="width:.9rem;height:.9rem;vertical-align:-2px">')+' '+status+'</div>'+
         '<div class="sub">Avgång '+svDate(v(c,'departure_time'))+'</div>'+
-        '<div class="sub" title="Senaste gången Homey hämtade data från Kia" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
+        '<div class="sub" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr)))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
       '</div>'+
     '</div>'+
     '<div class="car-btns">'+
