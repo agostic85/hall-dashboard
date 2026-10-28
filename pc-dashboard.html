@@ -5,6 +5,26 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1015">
 <title>Kontoret</title>
+<script>
+/* PWA – gör sidan installerbar som app. Aktiv bara via https (GitHub Pages),
+   påverkar inte den lokala filen (kontoret.html) eller plattan. */
+(function(){
+  if (location.protocol !== 'https:') return;
+  var h = document.head;
+  function add(rel, href, attrs){ var l=document.createElement('link'); l.rel=rel; l.href=href; for(var k in (attrs||{})) l.setAttribute(k, attrs[k]); h.appendChild(l); }
+  add('manifest', 'manifest.webmanifest');
+  add('icon', 'icon-192.png', {sizes:'192x192', type:'image/png'});
+  add('apple-touch-icon', 'apple-touch-icon.png');
+  var m=document.createElement('meta'); m.name='apple-mobile-web-app-capable'; m.content='yes'; h.appendChild(m);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+  /* Ladda om appen automatiskt när en ny version publicerats (kollar var 15:e minut) */
+  function hash(t){ var x=0; for(var i=0;i<t.length;i++){ x=((x<<5)-x+t.charCodeAt(i))|0; } return x; }
+  function sig(){ return fetch(location.pathname, {cache:'no-store'}).then(function(r){ return r.text(); }).then(hash); }
+  var first=null;
+  sig().then(function(s){ first=s; }).catch(function(){});
+  setInterval(function(){ sig().then(function(s){ if(first!==null && s!==first) location.reload(); }).catch(function(){}); }, 15*60*1000);
+})();
+</script>
 <style>
 :root{
   --bg:#0d1015; --card:#161a21; --card2:#1c212a; --line:#262c37;

@@ -1,0 +1,31 @@
+{
+  "name": "Kontoret – Hall-dashboard",
+  "short_name": "Kontoret",
+  "id": "./pc-dashboard.html",
+  "start_url": "./pc-dashboard.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0d1015",
+  "theme_color": "#0d1015",
+  "lang": "sv",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
