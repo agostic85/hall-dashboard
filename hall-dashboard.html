@@ -135,6 +135,11 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
 .cev .ct{flex:none;width:5.4rem;color:var(--muted);font-size:.85rem;padding-top:.08rem;font-variant-numeric:tabular-nums}
 .cev .cs{flex:1;min-width:0;overflow-wrap:anywhere}
 .cempty{font-size:.8rem;color:#5b6475}
+.seg-days{display:flex;flex-wrap:wrap;gap:.35rem}
+.seg-days button{padding:.45rem .75rem;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:.85rem}
+.seg-days button.on{background:var(--blue);border-color:var(--blue);color:#06172b}
+.tm-row{display:flex;gap:.5rem;align-items:center}
+.tm-row input{flex:1}
 
 /* Appliances */
 .apps{margin-top:.8rem;padding-top:.7rem;border-top:1px solid var(--line)}
@@ -275,6 +280,15 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;ga
     <div class="acts"><button class="btn" data-act="setdemo">Demoläge</button><button class="btn" data-act="setclose">Avbryt</button><button class="btn primary" data-act="setsave">Spara & anslut</button></div>
   </div>
 </div>
+<div class="scrim" id="calScrim">
+  <div class="sheet">
+    <h3>Lägg till i kalendern</h3>
+    <div class="field"><label>Vad?</label><input id="calS" maxlength="120" autocomplete="off" placeholder="t.ex. Tandläkare Bianca"></div>
+    <div class="field"><label>Dag</label><div class="seg-days" id="calDays"></div></div>
+    <div class="field"><label>Tid – valfritt, tomt blir heldag</label><div class="tm-row"><input id="calT" type="time"><button class="btn" data-act="calnotime">Heldag</button></div></div>
+    <div class="acts"><button class="btn" data-act="calclose">Avbryt</button><button class="btn primary" data-act="calsave">Spara</button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -286,6 +300,7 @@ var CONFIG = {
   address: '',          // t.ex. 'http://192.168.1.50' eller 'https://192-168-1-50.homey.homeylocal.com'
   token:   '',          // API-nyckel från Homey (Inställningar → API-nycklar)
   pollMs:  5000,        // hur ofta status hämtas
+  calNewVar: 'df3f83f2-d593-42cd-a898-68f80a8e4e8e', // Homey-variabel kalender_ny (nya händelser från dashboarden → flödet "Hall-dashboard: skriv till kalender")
   calVar:  '752c7899-166f-4a3c-b474-3eeb5807ff15', // Homey-variabel kalender_vecka (fylls av flödet "Hall-dashboard: hämta kalender")
   nightFrom: 22, nightTo: 6,   // skärmen dimmas mellan dessa timmar
   dev: {
@@ -614,9 +629,38 @@ function loadCal(){
     cal = JSON.parse(x.value || '{}'); calErr = ''; renderCal();
   }).catch(function(e){ calErr = e.message; renderCal(); });
 }
+var calSel = null;
+function openCalAdd(){
+  $('calS').value = ''; $('calT').value = ''; calSel = ymd(new Date()); renderCalDays();
+  $('calScrim').classList.add('show'); setTimeout(function(){ $('calS').focus(); }, 60);
+}
+function renderCalDays(){
+  var t = new Date(), h = '';
+  for(var i=0;i<14;i++){
+    var d = new Date(t.getFullYear(), t.getMonth(), t.getDate()+i), k = ymd(d);
+    var l = i===0 ? 'Idag' : i===1 ? 'Imorgon' : d.toLocaleDateString('sv-SE',{weekday:'short', day:'numeric'});
+    h += '<button class="'+(k===calSel?'on':'')+'" data-act="calday" data-d="'+k+'">'+l+'</button>';
+  }
+  $('calDays').innerHTML = h;
+}
+function saveCal(){
+  var s = $('calS').value.trim(); if(!s){ toast('Skriv vad som ska hända'); return; }
+  var req = {s:s, d:calSel, t:$('calT').value||'', id:Date.now()};
+  $('calScrim').classList.remove('show');
+  if(!cal) cal = {ev:[]};
+  cal.ev = (cal.ev||[]).concat([{d:req.d, s:s, a:req.t?0:1, t:req.t, e:''}]); renderCal();
+  if(DEMO){ toast('Demoläge – sparas inte'); return; }
+  var val = JSON.stringify(req), path = '/manager/logic/variable/'+CONFIG.calNewVar;
+  function ok(x){ return x && (x.value===val || x.value==='-'+req.id); }
+  api('PUT', path, {value:val}).catch(function(){ return null; })
+    .then(function(){ return api('GET', path); })
+    .then(function(x){ if(ok(x)) return x; return api('PUT', path, {variable:{value:val}}).then(function(){ return api('GET', path); }); })
+    .then(function(x){ if(!ok(x)) throw new Error('kunde inte skriva till Homey'); toast('Sparat – syns i telefonerna om en stund'); setTimeout(loadCal, 15000); })
+    .catch(function(e){ toast('Kunde inte spara ('+e.message+')'); });
+}
 function renderCal(){
   var el = $('cal'); if(!el) return;
-  var head = '<div class="head"><h2>'+icon('calendar')+'Veckans kalender</h2>'+(cal && cal.u && cal.u!=='demo' ? '<span class="sub">uppdaterad '+cal.u+'</span>' : '')+'</div>';
+  var head = '<div class="head"><h2>'+icon('calendar')+'Veckans kalender</h2>'+'<span style="display:flex;align-items:center;gap:.6rem">'+(cal && cal.u && cal.u!=='demo' ? '<span class="sub">uppdaterad '+cal.u+'</span>' : '')+'<button class="btn" data-act="caladd" style="padding:.35rem .8rem">+ Lägg till</button></span></div>';
   if(!cal || !cal.ev){ el.innerHTML = head + '<div class="sub" style="margin-top:.6rem">'+(calErr ? 'Kunde inte läsa kalendern ('+esc(calErr)+')' : 'Hämtar kalender…')+'</div>'; return; }
   var t = new Date(), h = '';
   for(var i=0;i<7;i++){
@@ -810,6 +854,11 @@ document.addEventListener('click', function(e){
     case 'force': setCap(D.force,'onoff',!v(D.force,'onoff')); break;
     case 'lock': if(!v(D.door,'locked')){ setCap(D.door,'locked',true); toast('Ytterdörren låses'); } else toast('Håll in för att låsa upp'); break;
     case 'dimoff': CONFIG.lights[dimIdx].ids.forEach(function(id){ setCap(id,'onoff',false); }); closeDim(); break;
+    case 'caladd': openCalAdd(); break;
+    case 'calday': calSel = t.dataset.d; renderCalDays(); break;
+    case 'calnotime': $('calT').value = ''; break;
+    case 'calclose': $('calScrim').classList.remove('show'); break;
+    case 'calsave': saveCal(); break;
     case 'dimclose': closeDim(); break;
     case 'setclose': $('setScrim').classList.remove('show'); break;
     case 'setsave':
