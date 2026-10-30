@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#0d1015">
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Michroma&display=swap">
 <title>Kontoret</title>
 <script>
 /* PWA – gör sidan installerbar som app. Aktiv bara via https (GitHub Pages),
@@ -31,10 +33,11 @@
   --text:#eef1f6; --muted:#8b94a5; --faint:#5b6475;
   --warm:#f6b84b; --warm2:#ff9f43; --good:#3ecf8e; --warn:#f6b84b; --bad:#ff6b6b; --blue:#5aa9ff; --violet:#a78bfa;
   --r:1.15rem; --gap:.8rem;
+  --disp:"Michroma","Chakra Petch",system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:clamp(12px,1.22vw,18px)}
-body{background:var(--bg);color:var(--text);font-family:"SamsungOne",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+body{background:var(--bg);color:var(--text);font-family:"Chakra Petch","SamsungOne",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
   height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;font-variant-numeric:tabular-nums}
 body.night .app{filter:brightness(.55) saturate(.8)}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -42,7 +45,7 @@ svg{width:1.25rem;height:1.25rem;stroke:currentColor;fill:none;stroke-width:1.8;
 
 .app{height:100vh;display:flex;flex-direction:column;padding:1rem 1.1rem;gap:var(--gap);transition:filter .6s}
 header{display:flex;align-items:center;gap:1.4rem;padding:0 .3rem}
-.clock{font-size:3.4rem;font-weight:300;letter-spacing:-.03em;line-height:1}
+.clock{font-family:var(--disp);font-size:2.8rem;font-weight:400;letter-spacing:-.02em;line-height:1}
 .date{display:flex;flex-direction:column;gap:.15rem}
 .date b{font-weight:600;font-size:1.1rem}
 .date span{color:var(--muted);font-size:.9rem}
@@ -61,7 +64,7 @@ header{display:flex;align-items:center;gap:1.4rem;padding:0 .3rem}
 main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.55fr 1.05fr;gap:var(--gap)}
 .col{display:flex;flex-direction:column;gap:var(--gap);min-height:0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;min-height:0;position:relative;overflow:hidden}
-.card h2{font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;align-items:center;gap:.45rem}
+.card h2{font-family:var(--disp);font-size:.68rem;font-weight:400;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);display:flex;align-items:center;gap:.45rem}
 .card h2 svg{width:1rem;height:1rem}
 .head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.8rem}
 .sub{color:var(--muted);font-size:.85rem}
@@ -267,6 +270,65 @@ main{grid-template-columns:1.05fr 1.45fr 1.1fr}
   .clock{font-size:2.6rem}
   .alerts{display:none}
 }
+/* === Mjuk + gradient (samma som hall-dashboard) === */
+:root{--r:1.3rem;--line:rgba(255,255,255,.06)}
+body{background:
+ radial-gradient(ellipse at 0% 0%,#1c2b47 0%,transparent 58%),
+ radial-gradient(ellipse at 100% 100%,#1a1d33 0%,transparent 50%),
+ linear-gradient(160deg,#10141c 0%,#0c0f15 100%)}
+.card,.sheet{background:linear-gradient(160deg,rgba(255,255,255,.055) 0%,rgba(255,255,255,.02) 100%),#151922;
+ border:1px solid rgba(255,255,255,.05);
+ box-shadow:0 .5rem 1.5rem rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05)}
+.weather{background:linear-gradient(160deg,#22304a 0%,#18202e 55%,#151922 100%)}
+.car{background:linear-gradient(160deg,#1c2c48 0%,#172031 55%,#151922 100%)}
+.tile,.kpi div{border-radius:1rem;border-color:transparent;background:linear-gradient(160deg,#2a303c,#222731);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.tile.on{background:linear-gradient(150deg,#4a3518 0%,#33271a 60%,#261f18 100%);border-color:transparent;
+ box-shadow:0 0 1.2rem rgba(246,184,75,.14)}
+.tile .bar{border-radius:0 3px 3px 0}
+.btn,.chip,.sp-dev{border-radius:99px;border-color:transparent;background:linear-gradient(160deg,#232833,#1c2029)}
+.iconbtn,.rbtn{border-color:transparent;background:linear-gradient(160deg,#232833,#1c2029)}
+.app-row .ai,.curtain .ai,.sp-ph{background:linear-gradient(160deg,#2a303c,#222731)}
+.chip.warn{background:linear-gradient(160deg,#2e2516,#221c12);border-color:transparent}
+.chip.bad{border-color:transparent}
+.btn.active,.sp-dev.on{background:linear-gradient(160deg,#16443a,#11332a);border-color:transparent}
+.sp-dev.cold{border-color:rgba(255,255,255,.18)}
+.cday,.indoor,.apps,.pstat,.printer,.spk{border-color:rgba(255,255,255,.05)}
+.phase i,.pbar,.sp-prog{background:rgba(255,255,255,.07)}
+.phase i b,.pbar b{background:linear-gradient(90deg,#3d7fd6,#5aa9ff)}
+html{background:#0d1015}
+/* === OLED: äkta svart bakgrund (släckta pixlar), gradienterna bara på korten === */
+html,body{background:#000}
+.card,.sheet{background:linear-gradient(160deg,rgba(255,255,255,.06) 0%,rgba(255,255,255,.015) 100%),#0b0d12;
+ border-color:rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.weather{background:linear-gradient(160deg,#1d2a42 0%,#0f1520 55%,#0b0d12 100%)}
+.car{background:linear-gradient(160deg,#1a2a46 0%,#101827 55%,#0b0d12 100%)}
+.scrim{background:rgba(0,0,0,.75)}
+.app{transition:filter .6s,transform 2s}
+/* === Miami: turkos + rosa accenter === */
+:root{--pink:#ff4fa3;--coral:#ff8a5c;--teal:#1de9c9;--cyan:#22d3ee;
+ --warm:var(--pink);--warm2:var(--coral);--good:var(--teal);--blue:var(--cyan);--violet:#c084fc}
+.clock{background:linear-gradient(90deg,var(--pink),var(--coral) 45%,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+.card::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;pointer-events:none;
+ background:linear-gradient(90deg,transparent,rgba(255,79,163,.55) 30%,rgba(34,211,238,.55) 70%,transparent)}
+.card h2 svg{color:var(--cyan)}
+/* svag neonglöd i hörnen – resten av skärmen förblir helsvart för OLED */
+body{background:
+ radial-gradient(ellipse 55% 50% at 0% 0%,rgba(255,79,163,.16) 0%,transparent 70%),
+ radial-gradient(ellipse 55% 50% at 100% 100%,rgba(34,211,238,.14) 0%,transparent 70%),
+ radial-gradient(ellipse 40% 35% at 100% 0%,rgba(192,132,252,.07) 0%,transparent 70%),
+ #000}
+.weather{background:linear-gradient(160deg,#3a1640 0%,#1a0f22 55%,#0b0d12 100%)}
+.car{background:linear-gradient(160deg,#0f3a42 0%,#0c1f26 55%,#0b0d12 100%)}
+.tile.on{background:linear-gradient(150deg,#4a1838 0%,#2a1430 55%,#140c1c 100%);box-shadow:0 0 1.2rem rgba(255,79,163,.18)}
+.tile.on .ic{background:linear-gradient(135deg,var(--pink),var(--coral));color:#2a0716;box-shadow:0 0 1.2rem rgba(255,79,163,.5)}
+.tile .bar{background:linear-gradient(90deg,var(--pink),var(--coral))}
+.btn.active,.sp-dev.on,.lockbtn.locked,.stat.done,.lvl.low{background:linear-gradient(160deg,#0e3b3d,#0a2628);border-color:transparent;color:var(--teal)}
+.stat.run,.app-row.run .ai{background:#0c2f3a;color:var(--cyan)}
+.lockbtn.unlocked,.lvl.mid{background:#3a1630}
+.phase i b,.pbar b,.sp-prog b{background:linear-gradient(90deg,var(--pink),var(--cyan))}
+.btn.primary,.rbtn.on,.rbtn.sp-play.on{background:linear-gradient(135deg,var(--pink),var(--cyan));border-color:transparent;color:#120612}
+.on .switch{background:linear-gradient(90deg,var(--pink),var(--cyan))}
+.dim{background:linear-gradient(90deg,#2a1430,var(--pink))}
 </style>
 </head>
 <body>
@@ -1183,6 +1245,8 @@ $('gear').addEventListener('click', function(){
 if(DEMO){ setConn('demo','Demoläge'); for(var k=0;k<40;k++){ poll(); } }
 else setConn('', 'Ansluter…');
 renderClock(); setInterval(renderClock, 10000);
+/* OLED: flytta hela ytan några pixlar var 3:e minut så att statiska delar inte bränns in */
+setInterval(function(){ var r = function(){ return Math.round(Math.random()*6-3); }; document.querySelector('.app').style.transform = 'translate('+r()+'px,'+r()+'px)'; }, 3*60*1000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
 spPoll(); setInterval(spPoll, 5000); spDevices(); setInterval(spDevices, 30000);
 
