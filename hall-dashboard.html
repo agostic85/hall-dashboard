@@ -258,7 +258,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
   <main>
     <section class="col col-left">
       <div class="card weather" id="weather"></div>
-      <div class="card energy"><div id="energy"></div><div class="apps" id="apps"></div></div>
+      <div class="card energy"><div id="energy"></div></div>
       <div class="card car" id="car"></div>
     </section>
 
@@ -702,7 +702,7 @@ function renderAlerts(){
 }
 
 function render(){
-  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderApps(); renderCal(); renderAlerts();
+  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderCal(); renderAlerts();
   if(dimIdx!=null) syncDim();
 }
 
