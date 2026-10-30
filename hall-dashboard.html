@@ -241,6 +241,31 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
   .clock{font-size:2.6rem}
   .alerts{display:none}
 }
+/* === Mjuk + gradient (bygger på nuvarande) === */
+:root{--r:1.3rem;--line:rgba(255,255,255,.06)}
+body{background:
+ radial-gradient(ellipse at 0% 0%,#1c2b47 0%,transparent 58%),
+ radial-gradient(ellipse at 100% 100%,#1a1d33 0%,transparent 50%),
+ linear-gradient(160deg,#10141c 0%,#0c0f15 100%)}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.055) 0%,rgba(255,255,255,.02) 100%),#151922;
+ border:1px solid rgba(255,255,255,.05);
+ box-shadow:0 .5rem 1.5rem rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.05)}
+.weather{background:linear-gradient(160deg,#22304a 0%,#18202e 55%,#151922 100%)}
+.car{background:linear-gradient(160deg,#1c2c48 0%,#172031 55%,#151922 100%)}
+.tile,.fc-day{border-radius:1rem;border-color:transparent;background:linear-gradient(160deg,#2a303c,#222731);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.tile.on{background:linear-gradient(150deg,#4a3518 0%,#33271a 60%,#261f18 100%);border-color:transparent;
+ box-shadow:0 0 1.2rem rgba(246,184,75,.14)}
+.tile .bar{border-radius:0 3px 3px 0}
+.btn,.chip{border-radius:99px;border-color:transparent;background:linear-gradient(160deg,#232833,#1c2029)}
+.iconbtn{border-color:transparent;background:linear-gradient(160deg,#232833,#1c2029)}
+.chip.warn{background:linear-gradient(160deg,#2e2516,#221c12);border-color:transparent}
+.chip.bad{border-color:transparent}
+.btn.active{background:linear-gradient(160deg,#16443a,#11332a);border-color:transparent}
+.lockbtn{border-radius:.9rem}
+.cday,.w-row,.indoor,.apps,.pstat{border-color:rgba(255,255,255,.05)}
+.phase i,.pbar{background:rgba(255,255,255,.07)}
+.phase i b,.pbar b{background:linear-gradient(90deg,#3d7fd6,#5aa9ff)}
+#pchart rect[fill="#2a303b"]{fill:#262b36}
 </style>
 </head>
 <body>
