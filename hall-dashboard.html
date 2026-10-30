@@ -689,7 +689,7 @@ function wasteWhen(n){ return n===0 ? 'idag' : n===1 ? 'imorgon' : 'om '+n+' d';
 function renderWaste(){
   var el = $('waste'); if(!el) return;
   var L = wasteNext(3);
-  el.innerHTML = '<div class="head"><h2>'+icon('trash')+'Sophämtning</h2><span class="sub" style="font-size:.7rem">var 14:e dag · fre</span></div>' +
+  el.innerHTML = '<div class="head"><h2>'+icon('trash')+'Sophämtning</h2></div>' +
     L.map(function(x,i){
       var dl = x.d.toLocaleDateString('sv-SE',{weekday:'short', day:'numeric', month:'numeric'}).replace(/^./,function(c){return c.toUpperCase();});
       return '<div class="w-row'+(i===0?' next':'')+(x.days<=1?' soon':'')+'"><span class="w-dot" style="background:'+x.f.col+'"></span>'+
