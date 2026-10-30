@@ -191,7 +191,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
 .w-row.soon .w-c{color:var(--warn);font-weight:600}
 
 /* Prognos */
-.fc-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
+.fc-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem}
 .fc-day{background:var(--card2);border:1px solid var(--line);border-radius:.7rem;padding:.4rem .3rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.15rem}
 .fc-l{font-size:.72rem;color:var(--muted);font-weight:600}
 .fc-i svg{width:1.6rem;height:1.6rem;color:var(--blue);stroke-width:1.5}
@@ -288,6 +288,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
   <main>
     <section class="col col-left">
       <div class="card weather" id="weather"></div>
+      <div class="card fc" id="fc"></div>
       <div class="card energy"><div id="energy"></div></div>
       <div class="card car" id="car"></div>
     </section>
@@ -302,7 +303,6 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
       </div>
       <div class="card door" id="door"></div>
       <div class="card price" id="price"></div>
-      <div class="card fc" id="fc"></div>
     </section>
 
     <section class="col col-right">
@@ -354,7 +354,8 @@ var CONFIG = {
   calVar:  '752c7899-166f-4a3c-b474-3eeb5807ff15', // Homey-variabel kalender_vecka (fylls av flödet "Hall-dashboard: hämta kalender")
   nightFrom: 22, nightTo: 6,   // skärmen dimmas mellan dessa timmar
   // Sophämtning: var 14:e dag (fredagar). Matavfall töms alltid + en fraktion enligt turordningen nedan.
-  waste: {start:'2026-11-06', days:14, cycle:[
+  // moves: flyttade tömningar vid helgdagar, t.ex. {'2027-01-01':'2026-12-31'}
+  waste: {start:'2026-11-06', days:14, moves:{}, cycle:[
     {name:'Plastförpackningar', short:'Plast',  col:'#f6b84b'},
     {name:'Restavfall',         short:'Rest',   col:'#8b94a5'},
     {name:'Pappersförpackningar',short:'Papper', col:'#5aa9ff'}
@@ -676,9 +677,11 @@ function wasteNext(n){
   var W = CONFIG.waste, p = W.start.split('-'), s = new Date(+p[0], +p[1]-1, +p[2]);
   var t = new Date(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate());
   var diff = Math.round((t - s)/86400000), k = diff <= 0 ? 0 : Math.ceil(diff / W.days), out = [];
-  for(var i=0;i<n;i++){
-    var idx = k+i, d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + idx*W.days);
-    out.push({d:d, days:Math.round((d - t)/86400000), f:W.cycle[((idx % W.cycle.length) + W.cycle.length) % W.cycle.length]});
+  for(var idx=k; out.length<n; idx++){
+    var d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + idx*W.days), mv = (W.moves||{})[ymd(d)];
+    if(mv){ var q = mv.split('-'); d = new Date(+q[0], +q[1]-1, +q[2]); }
+    var dd = Math.round((d - t)/86400000); if(dd < 0) continue;   // flyttad tömning som redan passerat
+    out.push({d:d, days:dd, f:W.cycle[((idx % W.cycle.length) + W.cycle.length) % W.cycle.length]});
   }
   return out;
 }
@@ -711,15 +714,17 @@ function loadFc(){
       if(d.probability_of_precipitation!=null && d.probability_of_precipitation!==9999) o.pop=Math.max(o.pop,d.probability_of_precipitation);
       var dist = Math.abs(h-13); if(d.symbol_code && d.symbol_code!==9999 && dist<o.symDist){ o.sym=d.symbol_code; o.symDist=dist; }
     });
-    fc = order.slice(0,5).map(function(k){ return days[k]; }); fcErr = ''; renderFc();
+    var st = (order[0]===ymd(new Date()) && new Date().getHours()>=15) ? 1 : 0;   // efter kl 15 börjar prognosen på imorgon
+    fc = order.slice(st, st+3).map(function(k){ return days[k]; }); fcErr = ''; renderFc();
   }).catch(function(e){ fcErr = e.message; renderFc(); });
 }
 function renderFc(){
   var el = $('fc'); if(!el) return;
-  var head = '<div class="head"><h2>'+icon('sun')+'Prognos 5 dygn</h2><span class="sub" style="font-size:.7rem">SMHI</span></div>';
+  var head = '<div class="head"><h2>'+icon('sun')+'Prognos 3 dygn</h2><span class="sub" style="font-size:.7rem">SMHI</span></div>';
   if(!fc){ el.innerHTML = head + '<div class="sub">'+(fcErr ? 'Kunde inte hämta prognosen ('+esc(fcErr)+')' : 'Hämtar prognos…')+'</div>'; return; }
   el.innerHTML = head + '<div class="fc-row">' + fc.map(function(o,i){
-    var lbl = i===0 ? 'Idag' : i===1 ? 'Imorgon' : o.d.toLocaleDateString('sv-SE',{weekday:'short'}).replace(/^./,function(c){return c.toUpperCase();});
+    var dd = Math.round((new Date(o.d.getFullYear(),o.d.getMonth(),o.d.getDate()) - new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/86400000);
+    var lbl = dd===0 ? 'Idag' : dd===1 ? 'Imorgon' : o.d.toLocaleDateString('sv-SE',{weekday:'short'}).replace(/^./,function(c){return c.toUpperCase();});
     return '<div class="fc-day" title="'+(WXTXT[o.sym]||'')+'"><div class="fc-l">'+lbl+'</div><div class="fc-i">'+icon(wxIcon(o.sym))+'</div>'+
       '<div class="fc-t"><b>'+num(Math.round(o.tmax)||0,0)+'°</b><span>'+num(Math.round(o.tmin)||0,0)+'°</span></div>'+
       '<div class="fc-x">'+(o.pop>=20 ? icon('drop')+num(o.pop,0)+' %' : icon('wind')+num(o.wmax,0)+' m/s')+'</div></div>';
