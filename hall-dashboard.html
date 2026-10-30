@@ -180,6 +180,16 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
 .pbar{height:.25rem;border-radius:99px;background:#262c37;margin-top:.3rem;overflow:hidden}
 .pbar b{display:block;height:100%;background:var(--blue)}
 
+/* Prognos */
+.fc-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
+.fc-day{background:var(--card2);border:1px solid var(--line);border-radius:.7rem;padding:.4rem .3rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.15rem}
+.fc-l{font-size:.72rem;color:var(--muted);font-weight:600}
+.fc-i svg{width:1.6rem;height:1.6rem;color:var(--blue);stroke-width:1.5}
+.fc-t b{font-size:1.05rem;font-weight:500;margin-right:.3rem}
+.fc-t span{font-size:.8rem;color:var(--muted)}
+.fc-x{font-size:.7rem;color:var(--muted);display:flex;align-items:center;gap:.2rem}
+.fc-x svg{width:.75rem;height:.75rem}
+
 /* Spotpris */
 .price{display:flex;flex-direction:column}
 .price-top{display:flex;align-items:center;gap:.8rem;margin-bottom:.3rem}
@@ -245,6 +255,12 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
     <symbol id="i-therm" viewBox="0 0 24 24"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
     <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-partly" viewBox="0 0 24 24"><path d="M8 3.5v1.2M3.5 8h1.2M4.8 4.8l.9.9M11.3 4.8l-.9.9"/><path d="M5.3 10.5A3.2 3.2 0 0 1 11 7.6"/><path d="M9 20a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.3 1.2A3.5 3.5 0 0 1 18.5 20z"/></symbol>
+    <symbol id="i-snow" viewBox="0 0 24 24"><path d="M7 14a4 4 0 0 1-.5-8A6 6 0 0 1 18 7a3.5 3.5 0 0 1 0 7"/><path d="M8 17.5h.01M12 17.5h.01M16 17.5h.01M10 20.5h.01M14 20.5h.01"/></symbol>
+    <symbol id="i-sleet" viewBox="0 0 24 24"><path d="M7 14a4 4 0 0 1-.5-8A6 6 0 0 1 18 7a3.5 3.5 0 0 1 0 7"/><path d="M8 17l-1 2M16 17l-1 2M12 18h.01M10 21h.01M14 21h.01"/></symbol>
+    <symbol id="i-fog" viewBox="0 0 24 24"><path d="M7 12a4 4 0 0 1-.5-8A6 6 0 0 1 18 5a3.5 3.5 0 0 1 .5 7M4 16h16M6 20h12"/></symbol>
+    <symbol id="i-thunder" viewBox="0 0 24 24"><path d="M7 15a4 4 0 0 1-.5-8A6 6 0 0 1 18 8a3.5 3.5 0 0 1 0 7"/><path d="M13 12l-3 5h4l-2 4"/></symbol>
     <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"/></symbol>
   </defs>
 </svg>
@@ -275,6 +291,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
       </div>
       <div class="card door" id="door"></div>
       <div class="card price" id="price"></div>
+      <div class="card fc" id="fc"></div>
     </section>
 
     <section class="col col-right">
@@ -324,6 +341,7 @@ var CONFIG = {
   calNewVar: 'df3f83f2-d593-42cd-a898-68f80a8e4e8e', // Homey-variabel kalender_ny (nya händelser från dashboarden → flödet "Hall-dashboard: skriv till kalender")
   calVar:  '752c7899-166f-4a3c-b474-3eeb5807ff15', // Homey-variabel kalender_vecka (fylls av flödet "Hall-dashboard: hämta kalender")
   nightFrom: 22, nightTo: 6,   // skärmen dimmas mellan dessa timmar
+  fcLat: 63.156, fcLon: 14.700, // position för SMHI-prognosen (Torvalla) – justera vid behov
   dev: {
     outdoor:  '163a3cb4-367c-42c6-ba86-c6bd0af6430d', // Torvalla (väder)
     indoor:   '0426bba8-1bfb-4f8d-ad5b-33f24f4d48a1', // Netatmo inne (kontor)
@@ -635,6 +653,38 @@ function _unusedPrinters(){
   return h;
 }
 
+/* ===================== Väderprognos 5 dygn (SMHI SNOW1g, öppna data) ===================== */
+var fc = null, fcErr = '';
+function wxIcon(c){ c=+c; return c<=2?'sun':c<=4?'partly':c<=6?'cloud':c===7?'fog':(c===11||c===21)?'thunder':(c>=12&&c<=14)||(c>=22&&c<=24)?'sleet':(c>=15&&c<=17)||c>=25?'snow':'rain'; }
+var WXTXT = {1:'Klart',2:'Mest klart',3:'Växlande moln',4:'Halvklart',5:'Molnigt',6:'Mulet',7:'Dimma',8:'Lätta regnskurar',9:'Regnskurar',10:'Kraftiga regnskurar',11:'Åska',12:'Lätta byar av snöblandat regn',13:'Snöblandade byar',14:'Kraftiga snöblandade byar',15:'Lätta snöbyar',16:'Snöbyar',17:'Kraftiga snöbyar',18:'Lätt regn',19:'Regn',20:'Kraftigt regn',21:'Åska',22:'Lätt snöblandat regn',23:'Snöblandat regn',24:'Kraftigt snöblandat regn',25:'Lätt snöfall',26:'Snöfall',27:'Kraftigt snöfall'};
+function loadFc(){
+  var u = 'https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/'+CONFIG.fcLon.toFixed(6)+'/lat/'+CONFIG.fcLat.toFixed(6)+'/data.json';
+  fetch(u).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){
+    var days = {}, order = [];
+    (j.timeSeries||[]).forEach(function(x){
+      var t = new Date(x.time), k = ymd(t), d = x.data||{}, h = t.getHours();
+      if(!days[k]){ days[k] = {k:k, d:t, tmin:99, tmax:-99, wmax:0, pop:0, sym:null, symDist:99}; order.push(k); }
+      var o = days[k];
+      if(d.air_temperature!=null && d.air_temperature!==9999){ o.tmin=Math.min(o.tmin,d.air_temperature); o.tmax=Math.max(o.tmax,d.air_temperature); }
+      if(d.wind_speed!=null && d.wind_speed!==9999) o.wmax=Math.max(o.wmax,d.wind_speed);
+      if(d.probability_of_precipitation!=null && d.probability_of_precipitation!==9999) o.pop=Math.max(o.pop,d.probability_of_precipitation);
+      var dist = Math.abs(h-13); if(d.symbol_code && d.symbol_code!==9999 && dist<o.symDist){ o.sym=d.symbol_code; o.symDist=dist; }
+    });
+    fc = order.slice(0,5).map(function(k){ return days[k]; }); fcErr = ''; renderFc();
+  }).catch(function(e){ fcErr = e.message; renderFc(); });
+}
+function renderFc(){
+  var el = $('fc'); if(!el) return;
+  var head = '<div class="head"><h2>'+icon('sun')+'Prognos 5 dygn</h2><span class="sub" style="font-size:.7rem">SMHI</span></div>';
+  if(!fc){ el.innerHTML = head + '<div class="sub">'+(fcErr ? 'Kunde inte hämta prognosen ('+esc(fcErr)+')' : 'Hämtar prognos…')+'</div>'; return; }
+  el.innerHTML = head + '<div class="fc-row">' + fc.map(function(o,i){
+    var lbl = i===0 ? 'Idag' : i===1 ? 'Imorgon' : o.d.toLocaleDateString('sv-SE',{weekday:'short'}).replace(/^./,function(c){return c.toUpperCase();});
+    return '<div class="fc-day" title="'+(WXTXT[o.sym]||'')+'"><div class="fc-l">'+lbl+'</div><div class="fc-i">'+icon(wxIcon(o.sym))+'</div>'+
+      '<div class="fc-t"><b>'+num(Math.round(o.tmax)||0,0)+'°</b><span>'+num(Math.round(o.tmin)||0,0)+'°</span></div>'+
+      '<div class="fc-x">'+(o.pop>=20 ? icon('drop')+num(o.pop,0)+' %' : icon('wind')+num(o.wmax,0)+' m/s')+'</div></div>';
+  }).join('') + '</div>';
+}
+
 /* Veckans kalender (från Homey-variabel, fylls av HomeyScript-flöde) */
 var cal = null, calErr = '';
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -899,6 +949,7 @@ renderClock(); setInterval(renderClock, 10000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
 loadPrices(); setInterval(loadPrices, 15*60*1000);
 loadCal(); setInterval(loadCal, 60*1000);
+loadFc(); setInterval(loadFc, 30*60*1000);
 
 /* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
 (function(){
