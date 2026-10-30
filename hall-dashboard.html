@@ -720,7 +720,7 @@ function loadFc(){
 }
 function renderFc(){
   var el = $('fc'); if(!el) return;
-  var head = '<div class="head"><h2>'+icon('sun')+'Prognos 3 dygn</h2><span class="sub" style="font-size:.7rem">SMHI</span></div>';
+  var head = '<div class="head"><h2>'+icon('sun')+'Prognos 3 dygn</h2></div>';
   if(!fc){ el.innerHTML = head + '<div class="sub">'+(fcErr ? 'Kunde inte hämta prognosen ('+esc(fcErr)+')' : 'Hämtar prognos…')+'</div>'; return; }
   el.innerHTML = head + '<div class="fc-row">' + fc.map(function(o,i){
     var dd = Math.round((new Date(o.d.getFullYear(),o.d.getMonth(),o.d.getDate()) - new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/86400000);
