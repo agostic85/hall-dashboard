@@ -180,6 +180,16 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
 .pbar{height:.25rem;border-radius:99px;background:#262c37;margin-top:.3rem;overflow:hidden}
 .pbar b{display:block;height:100%;background:var(--blue)}
 
+/* Sophämtning */
+.w-row{display:flex;align-items:center;gap:.55rem;padding:.32rem 0;border-bottom:1px solid var(--line);font-size:.85rem}
+.w-row:last-child{border:0}
+.w-dot{width:.6rem;height:.6rem;border-radius:50%;flex:none}
+.w-d{width:5.2rem;flex:none;color:var(--muted);font-size:.78rem}
+.w-f{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w-c{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.w-row.next .w-f{font-weight:600}
+.w-row.soon .w-c{color:var(--warn);font-weight:600}
+
 /* Prognos */
 .fc-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.4rem}
 .fc-day{background:var(--card2);border:1px solid var(--line);border-radius:.7rem;padding:.4rem .3rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.15rem}
@@ -261,6 +271,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
     <symbol id="i-sleet" viewBox="0 0 24 24"><path d="M7 14a4 4 0 0 1-.5-8A6 6 0 0 1 18 7a3.5 3.5 0 0 1 0 7"/><path d="M8 17l-1 2M16 17l-1 2M12 18h.01M10 21h.01M14 21h.01"/></symbol>
     <symbol id="i-fog" viewBox="0 0 24 24"><path d="M7 12a4 4 0 0 1-.5-8A6 6 0 0 1 18 5a3.5 3.5 0 0 1 .5 7M4 16h16M6 20h12"/></symbol>
     <symbol id="i-thunder" viewBox="0 0 24 24"><path d="M7 15a4 4 0 0 1-.5-8A6 6 0 0 1 18 8a3.5 3.5 0 0 1 0 7"/><path d="M13 12l-3 5h4l-2 4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
     <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-8z"/></symbol>
   </defs>
 </svg>
@@ -296,6 +307,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
 
     <section class="col col-right">
       <div class="card cal" id="cal"></div>
+      <div class="card waste" id="waste"></div>
     </section>
   </main>
 </div>
@@ -341,6 +353,12 @@ var CONFIG = {
   calNewVar: 'df3f83f2-d593-42cd-a898-68f80a8e4e8e', // Homey-variabel kalender_ny (nya händelser från dashboarden → flödet "Hall-dashboard: skriv till kalender")
   calVar:  '752c7899-166f-4a3c-b474-3eeb5807ff15', // Homey-variabel kalender_vecka (fylls av flödet "Hall-dashboard: hämta kalender")
   nightFrom: 22, nightTo: 6,   // skärmen dimmas mellan dessa timmar
+  // Sophämtning: var 14:e dag (fredagar). Matavfall töms alltid + en fraktion enligt turordningen nedan.
+  waste: {start:'2026-11-06', days:14, cycle:[
+    {name:'Plastförpackningar', short:'Plast',  col:'#f6b84b'},
+    {name:'Restavfall',         short:'Rest',   col:'#8b94a5'},
+    {name:'Pappersförpackningar',short:'Papper', col:'#5aa9ff'}
+  ]},
   fcLat: 63.156, fcLon: 14.700, // position för SMHI-prognosen (Torvalla) – justera vid behov
   dev: {
     outdoor:  '163a3cb4-367c-42c6-ba86-c6bd0af6430d', // Torvalla (väder)
@@ -653,6 +671,29 @@ function _unusedPrinters(){
   return h;
 }
 
+/* ===================== Sophämtning ===================== */
+function wasteNext(n){
+  var W = CONFIG.waste, p = W.start.split('-'), s = new Date(+p[0], +p[1]-1, +p[2]);
+  var t = new Date(); t = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  var diff = Math.round((t - s)/86400000), k = diff <= 0 ? 0 : Math.ceil(diff / W.days), out = [];
+  for(var i=0;i<n;i++){
+    var idx = k+i, d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + idx*W.days);
+    out.push({d:d, days:Math.round((d - t)/86400000), f:W.cycle[((idx % W.cycle.length) + W.cycle.length) % W.cycle.length]});
+  }
+  return out;
+}
+function wasteWhen(n){ return n===0 ? 'idag' : n===1 ? 'imorgon' : 'om '+n+' d'; }
+function renderWaste(){
+  var el = $('waste'); if(!el) return;
+  var L = wasteNext(3);
+  el.innerHTML = '<div class="head"><h2>'+icon('trash')+'Sophämtning</h2><span class="sub" style="font-size:.7rem">var 14:e dag · fre</span></div>' +
+    L.map(function(x,i){
+      var dl = x.d.toLocaleDateString('sv-SE',{weekday:'short', day:'numeric', month:'numeric'}).replace(/^./,function(c){return c.toUpperCase();});
+      return '<div class="w-row'+(i===0?' next':'')+(x.days<=1?' soon':'')+'"><span class="w-dot" style="background:'+x.f.col+'"></span>'+
+        '<span class="w-d">'+dl+'</span><span class="w-f">'+x.f.name+'</span><span class="w-c">'+wasteWhen(x.days)+'</span></div>';
+    }).join('');
+}
+
 /* ===================== Väderprognos 5 dygn (SMHI SNOW1g, öppna data) ===================== */
 var fc = null, fcErr = '';
 function wxIcon(c){ c=+c; return c<=2?'sun':c<=4?'partly':c<=6?'cloud':c===7?'fog':(c===11||c===21)?'thunder':(c>=12&&c<=14)||(c>=22&&c<=24)?'sleet':(c>=15&&c<=17)||c>=25?'snow':'rain'; }
@@ -751,11 +792,12 @@ function renderAlerts(){
   if(v(D.car,'locked')===false) a.push(['warn','car','Bilen är olåst','carlock']);
   var co2 = netatmoOk() ? v(D.indoor,'measure_co2') : null; if(co2>=1400) a.push(['bad','alert','Hög CO₂ i kontoret']);
   var bb = v(D.doorbell,'measure_battery'); if(bb!=null && bb<20) a.push(['warn','alert','Ringklockan: lågt batteri']);
+  var wn = wasteNext(1)[0]; if(wn.days===1 || (wn.days===0 && new Date().getHours()<12)) a.push(['warn','trash','Sophämtning '+wasteWhen(wn.days)+': '+wn.f.short.toLowerCase()]);
   $('alerts').innerHTML = a.map(function(x){ return '<span class="chip '+x[0]+'"'+(x[3]?' data-act="'+x[3]+'" style="cursor:pointer"':'')+'>'+icon(x[1])+x[2]+'</span>'; }).join('');
 }
 
 function render(){
-  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderCal(); renderAlerts();
+  renderWeather(); renderLights(); renderPrice(); renderCar(); renderDoor(); renderEnergy(); renderCal(); renderWaste(); renderAlerts();
   if(dimIdx!=null) syncDim();
 }
 
