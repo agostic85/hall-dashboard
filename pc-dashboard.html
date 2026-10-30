@@ -220,6 +220,7 @@ main{grid-template-columns:1.05fr 1.45fr 1.1fr}
 .sp-dev{display:inline-flex;align-items:center;gap:.4rem;padding:.42rem .8rem;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:.84rem}
 .sp-dev svg{width:1rem;height:1rem}
 .sp-dev.on{background:#123a2a;border-color:#1f6b4b;color:#1ed760}
+.sp-dev.cold{border-style:dashed;opacity:.8}
 .sheet .note{font-size:.8rem;color:var(--muted);margin-top:.2rem}
 
 /* Spotpris */
@@ -451,7 +452,9 @@ CONFIG = {
   speakers: [
     {name:'Sonos Vardagsrum', id:'8f3767bb-63d6-4669-8d1b-8854434400de'},
     {name:'Sonos Badrum',     id:'5a5ee041-58be-4c6e-84b6-c9f15befe89a'}
-  ]
+  ],
+  /* Sonos-favorit som startas via Homey när högtalaren inte syns i Spotify */
+  sonosFavorite: {id:'2', name:'Caliente', description:'Spotify', image:'https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da84a49dfeea4df25d0563d7a1ce'}
 };
 
 /* Ögonblicksbild från Homey (26 okt 2026) – används i demoläge */
@@ -1033,6 +1036,21 @@ function spApi(method, path, body){
 }
 function spPoll(){ if(!SP.refresh){ renderSpotify(); return; } spApi('GET','/me/player').then(function(j){ spState = j; spErr = ''; renderSpotify(); }).catch(function(e){ spErr = e.message; renderSpotify(); }); }
 function spDevices(){ if(!SP.refresh) return; spApi('GET','/me/player/devices').then(function(j){ spDevs = (j&&j.devices)||[]; renderSpotify(); }).catch(function(){}); }
+/* Sonos syns bara i Web API när de är aktiva – matcha mot CONFIG.speakers på namn */
+function spNorm(n){ return String(n||'').toLowerCase().replace(/sonos/g,'').replace(/[^a-z0-9åäö]/g,''); }
+function spSpeakerDev(s){ var n = spNorm(s.name); return spDevs.filter(function(d){ return spNorm(d.name)===n; })[0]; }
+function sonosFavorite(id){
+  if(DEMO){ toast('Demoläge – Homey är inte anslutet'); return; }
+  if(spState && spState.is_playing) spApi('PUT','/me/player/pause').catch(function(){});
+  var e = encodeURIComponent, uri = 'homey:device:'+id, full = uri+':cloud_play_sonos_favorite';
+  /* sökvägen skiljer mellan Homey-versioner – prova nästa vid 404 */
+  var paths = ['/manager/flow/flowcardaction/'+e(uri)+'/'+e(full)+'/run', '/manager/flow/flowcardaction/'+e(full)+'/run', '/manager/flow/flowcardaction/'+e(uri)+'/cloud_play_sonos_favorite/run'];
+  (function next(i){
+    api('POST', paths[i], {args:{favorite:CONFIG.sonosFavorite}})
+      .then(function(){ toast('Startar '+CONFIG.sonosFavorite.name+' på Sonos'); setTimeout(spDevices,4000); setTimeout(spPoll,4000); })
+      .catch(function(err){ if(err.message==='HTTP 404' && i+1<paths.length) next(i+1); else toast('Kunde inte starta Sonos ('+err.message+')'); });
+  })(0);
+}
 function spCmd(method, path, body){ spApi(method, path, body).then(function(){ setTimeout(spPoll,500); setTimeout(spDevices,900); }).catch(function(e){ toast('Spotify: '+e.message); }); }
 function devIcon(t){ t = String(t||'').toLowerCase(); return t==='computer' ? 'pc' : t==='smartphone' ? 'phone' : (t==='tv'||t==='castvideo') ? 'tv' : 'speaker'; }
 window.addEventListener('message', function(e){ var d = e.data; if(d && d.type==='spotify-code' && SP.state && d.state===SP.state) spFinish(d.code); });
@@ -1049,6 +1067,8 @@ function renderSpotify(){
   var imgs = it && it.album && it.album.images || [], img = imgs.length ? imgs[Math.min(1, imgs.length-1)].url : '';
   var pct = it && it.duration_ms ? Math.min(100, (s.progress_ms||0)/it.duration_ms*100) : 0;
   var vol = dev && dev.volume_percent!=null ? dev.volume_percent : 50, canVol = !!dev && dev.supports_volume!==false;
+  var matched = {}, spk = CONFIG.speakers.map(function(x){ var d = spSpeakerDev(x); if(d) matched[d.id] = 1; return {s:x, d:d}; });
+  function devBtn(d){ return '<button class="sp-dev'+(d.is_active?' on':'')+'" data-act="spdev" data-id="'+esc(d.id)+'">'+icon(devIcon(d.type))+'<span>'+esc(d.name)+'</span></button>'; }
   var h = head+
     '<div class="sp-now">'+(img ? '<img src="'+esc(img)+'" alt="">' : '<div class="sp-ph">'+icon('music')+'</div>')+
     '<div class="info"><b>'+(it ? esc(it.name) : 'Inget spelas')+'</b><span>'+(it ? esc((it.artists||[]).map(function(a){ return a.name; }).join(', ')) : (spErr ? 'Fel: '+esc(spErr) : 'Välj en enhet nedan'))+'</span>'+
@@ -1059,7 +1079,8 @@ function renderSpotify(){
     '<button class="rbtn" data-act="spnext">'+icon('next')+'</button>'+
     '<input type="range" class="vol" id="spVol" min="0" max="100" value="'+vol+'"'+(canVol?'':' disabled')+' title="Volym"></div>'+
     '<div class="sp-lbl">Spela på</div><div class="sp-devs">'+
-    (spDevs.length ? spDevs.map(function(d){ return '<button class="sp-dev'+(d.is_active?' on':'')+'" data-act="spdev" data-id="'+esc(d.id)+'">'+icon(devIcon(d.type))+'<span>'+esc(d.name)+'</span></button>'; }).join('') : '<div class="sub">Inga enheter hittades. Öppna Spotify på en enhet så dyker den upp.</div>')+
+    spDevs.filter(function(d){ return !matched[d.id]; }).map(devBtn).join('')+
+    spk.map(function(k){ return k.d ? devBtn(k.d) : '<button class="sp-dev cold" data-act="spsonos" data-id="'+k.s.id+'" title="Syns inte i Spotify just nu – startar Sonos-favoriten '+esc(CONFIG.sonosFavorite.name)+'">'+icon('speaker')+'<span>'+esc(k.s.name)+'</span></button>'; }).join('')+
     '<button class="sp-dev" data-act="sprefresh" title="Uppdatera listan">↻</button></div>';
   el.innerHTML = h;
 }
@@ -1142,6 +1163,7 @@ document.addEventListener('click', function(e){
     case 'spprev': spCmd('POST','/me/player/previous'); break;
     case 'spnext': spCmd('POST','/me/player/next'); break;
     case 'spdev': spCmd('PUT','/me/player', {device_ids:[t.dataset.id], play:true}); toast('Byter enhet…'); break;
+    case 'spsonos': sonosFavorite(t.dataset.id); break;
     case 'sprefresh': spDevices(); spPoll(); break;
     case 'dimclose': closeDim(); break;
     case 'setclose': $('setScrim').classList.remove('show'); break;
