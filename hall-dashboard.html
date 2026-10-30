@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0d1015">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Michroma&display=swap">
 <title>Hallen</title>
 <script>
 /* PWA – gör sidan installerbar som app. Aktiv bara när hall-dashboard.html
@@ -31,10 +33,11 @@
   --text:#eef1f6; --muted:#8b94a5; --faint:#5b6475;
   --warm:#f6b84b; --warm2:#ff9f43; --good:#3ecf8e; --warn:#f6b84b; --bad:#ff6b6b; --blue:#5aa9ff; --violet:#a78bfa;
   --r:.9rem; --gap:.55rem;
+  --disp:"Michroma","Chakra Petch",system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{font-size:clamp(12px,1.22vw,18px)}
-body{background:var(--bg);color:var(--text);font-family:"SamsungOne",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
+body{background:var(--bg);color:var(--text);font-family:"Chakra Petch","SamsungOne",Roboto,system-ui,-apple-system,"Segoe UI",sans-serif;
   height:100vh;overflow:hidden;user-select:none;-webkit-user-select:none;font-variant-numeric:tabular-nums}
 body.night .app{filter:brightness(.55) saturate(.8)}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -42,7 +45,7 @@ svg{width:1.25rem;height:1.25rem;stroke:currentColor;fill:none;stroke-width:1.8;
 
 .app{height:100vh;display:flex;flex-direction:column;padding:.6rem .75rem;gap:var(--gap);transition:filter .6s}
 header{display:flex;align-items:center;gap:1rem;padding:0 .2rem}
-.clock{font-size:2.6rem;font-weight:300;letter-spacing:-.03em;line-height:1}
+.clock{font-family:var(--disp);font-size:2.2rem;font-weight:400;letter-spacing:-.02em;line-height:1}
 .date{display:flex;flex-direction:column;gap:.1rem}
 .date b{font-weight:600;font-size:1rem}
 .date span{color:var(--muted);font-size:.82rem}
@@ -61,7 +64,7 @@ header{display:flex;align-items:center;gap:1rem;padding:0 .2rem}
 main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:var(--gap)}
 .col{display:flex;flex-direction:column;gap:var(--gap);min-height:0}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:.7rem .85rem;min-height:0;position:relative;overflow:hidden;flex:none}
-.card h2{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);display:flex;align-items:center;gap:.4rem}
+.card h2{font-family:var(--disp);font-size:.62rem;font-weight:400;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);display:flex;align-items:center;gap:.4rem}
 .card h2 svg{width:.95rem;height:.95rem}
 .head{display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-bottom:.5rem}
 .sub{color:var(--muted);font-size:.8rem}
@@ -72,7 +75,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
 /* Weather */
 .weather{background:linear-gradient(160deg,#1b2433 0%,var(--card) 70%)}
 .wx-main{display:flex;align-items:center;gap:.9rem}
-.wx-temp{font-size:2.8rem;font-weight:200;letter-spacing:-.04em;line-height:.9}
+.wx-temp{font-size:2.8rem;font-weight:300;letter-spacing:-.04em;line-height:.9}
 .wx-icon svg{width:1.4rem;height:1.4rem;stroke:var(--blue);stroke-width:1.6}
 .kv{flex:1;display:grid;grid-template-columns:auto auto;gap:.3rem .7rem}
 .kv div{display:flex;align-items:center;gap:.35rem;font-size:.85rem;white-space:nowrap}
@@ -195,7 +198,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
 .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:10}
 .scrim.show{display:flex}
 .sheet{background:var(--card);border:1px solid var(--line);border-radius:1.4rem;padding:1.5rem;width:min(30rem,90vw)}
-.sheet h3{font-size:1.3rem;font-weight:600;margin-bottom:.3rem}
+.sheet h3{font-family:var(--disp);font-size:1.05rem;font-weight:400;margin-bottom:.3rem}
 .dim{-webkit-appearance:none;appearance:none;width:100%;height:4rem;border-radius:1rem;background:linear-gradient(90deg,#3a2c14,var(--warm));margin:1.2rem 0;outline:none}
 .dim::-webkit-slider-thumb{-webkit-appearance:none;width:1.2rem;height:4.4rem;border-radius:.5rem;background:#fff;box-shadow:0 0 .6rem rgba(0,0,0,.5)}
 .field{display:flex;flex-direction:column;gap:.3rem;margin:.8rem 0}
