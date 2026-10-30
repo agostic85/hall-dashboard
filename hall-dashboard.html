@@ -2,8 +2,10 @@
 <html lang="sv">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0d1015">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@300;400;500;600;700&family=Michroma&display=swap">
 <title>Hallen</title>
@@ -269,6 +271,9 @@ body{background:
 #wxfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;display:none;transition:opacity .6s}
 #weather{position:relative;z-index:1}
 body.night #wxfx{opacity:.5}
+/* iPhone: mörk statusrad/övre kant, inget vitt */
+html{background:#0d1015}
+.app{padding-top:calc(.6rem + env(safe-area-inset-top,0px));padding-bottom:calc(.6rem + env(safe-area-inset-bottom,0px))}
 </style>
 </head>
 <body>
