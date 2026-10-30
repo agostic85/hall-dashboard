@@ -266,6 +266,9 @@ body{background:
 .phase i,.pbar{background:rgba(255,255,255,.07)}
 .phase i b,.pbar b{background:linear-gradient(90deg,#3d7fd6,#5aa9ff)}
 #pchart rect[fill="#2a303b"]{fill:#262b36}
+#wxfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;display:none;transition:opacity .6s}
+#weather{position:relative;z-index:1}
+body.night #wxfx{opacity:.5}
 </style>
 </head>
 <body>
@@ -312,7 +315,7 @@ body{background:
 
   <main>
     <section class="col col-left">
-      <div class="card weather" id="weather"></div>
+      <div class="card weather"><canvas id="wxfx"></canvas><div id="weather"></div></div>
       <div class="card fc" id="fc"></div>
       <div class="card energy"><div id="energy"></div></div>
       <div class="card car" id="car"></div>
@@ -571,7 +574,7 @@ function renderWeather(){
   var co2 = netatmoOk() ? v(D.indoor,'measure_co2') : null;
   var cc = co2==null?'':co2<1000?'co2-good':co2<1400?'co2-ok':'co2-bad';
   $('weather').innerHTML =
-    '<div class="head"><h2>'+icon('cloud')+'Ute · Torvalla</h2><span class="wx-icon">'+icon(rain>0?'rain':'cloud')+'</span></div>'+
+    '<div class="head"><h2>'+icon('cloud')+'Väder</h2><span class="wx-icon">'+icon(rain>0?'rain':'cloud')+'</span></div>'+
     '<div class="wx-main"><div class="wx-temp">'+num(v(o,'measure_temperature'))+'°</div>'+
     '<div class="kv">'+
       '<div>'+icon('wind')+num(v(o,'measure_wind_strength'))+' m/s</div>'+
@@ -739,6 +742,9 @@ function loadFc(){
       if(d.probability_of_precipitation!=null && d.probability_of_precipitation!==9999) o.pop=Math.max(o.pop,d.probability_of_precipitation);
       var dist = Math.abs(h-13); if(d.symbol_code && d.symbol_code!==9999 && dist<o.symDist){ o.sym=d.symbol_code; o.symDist=dist; }
     });
+    var nowT = Date.now(), bd = 1e15, cur = null;   /* aktuell timme → väderanimation */
+    (j.timeSeries||[]).forEach(function(x){ var dd = Math.abs(new Date(x.time) - nowT), s = x.data && x.data.symbol_code; if(s && s!==9999 && dd<bd){ bd = dd; cur = s; } });
+    window.wxSym = cur; if(window.wxSet) wxSet(cur);
     var st = (order[0]===ymd(new Date()) && new Date().getHours()>=15) ? 1 : 0;   // efter kl 15 börjar prognosen på imorgon
     fc = order.slice(st, st+3).map(function(k){ return days[k]; }); fcErr = ''; renderFc();
   }).catch(function(e){ fcErr = e.message; renderFc(); });
@@ -1033,6 +1039,112 @@ loadFc(); setInterval(loadFc, 30*60*1000);
       .then(function(h){ if(cur && h!==cur && h.indexOf('</html>')>0){ try{localStorage.setItem('hallDash.cache',h);}catch(e){} location.reload(); } })
       .catch(function(){});
   }, 10*60*1000);
+})();
+</script>
+<script>
+/* ===================== Väderanimation i väderkortet =====================
+   Styrs av SMHI:s symbol för innevarande timme (sätts i loadFc via wxSet).
+   Testa manuellt med ?wx=rain | rain2 | rain3 | snow | snow3 | sleet | thunder | fog | clear | none */
+(function(){
+  var cv = document.getElementById('wxfx'); if(!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d'), W = 0, H = 0, DPR = Math.min(window.devicePixelRatio||1, 1.5);
+  var P = [], mode = 'none', lvl = 1, flash = 0, nextFlash = 0, fogs = [], stars = [], t0 = 0, last = 0, raf = 0;
+  var force = (/[?&]wx=([a-z0-9]+)/.exec(location.search)||[])[1];
+
+  function resize(){ var r = cv.parentNode.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); cv.width = W*DPR; cv.height = H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); build(); }
+  function area(){ return (W*H)/(1334*800/2.5); }
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+
+  function isDay(){ /* enkel solhöjdsberäkning för Torvalla */
+    var d = new Date(), lat = 63.156*Math.PI/180, lon = 14.7;
+    var n = (d - new Date(d.getFullYear(),0,0))/864e5, decl = -23.44*Math.cos(2*Math.PI*(n+10)/365)*Math.PI/180;
+    var utcH = d.getUTCHours() + d.getUTCMinutes()/60, ha = ((utcH + lon/15) - 12)*15*Math.PI/180;
+    return Math.asin(Math.sin(lat)*Math.sin(decl) + Math.cos(lat)*Math.cos(decl)*Math.cos(ha)) > -0.05;
+  }
+
+  function fromSym(s){ s = +s;
+    if(s===11||s===21) return ['thunder',2];
+    if(s===18||s===8) return ['rain',1]; if(s===19||s===9) return ['rain',2]; if(s===20||s===10) return ['rain',3];
+    if(s===25||s===15) return ['snow',1]; if(s===26||s===16) return ['snow',2]; if(s===27||s===17) return ['snow',3];
+    if((s>=12&&s<=14)||(s>=22&&s<=24)) return ['sleet',2];
+    if(s===7) return ['fog',1];
+    if(s>=1&&s<=2) return ['clear',2]; if(s>=3&&s<=4) return ['clear',1];
+    return ['none',1];
+  }
+  function fromForce(f){ var m = /^([a-z]+)(\d)?$/.exec(f)||[]; return [m[1]||'none', +(m[2]||2)]; }
+
+  function drop(y){ return {k:'r', x:rnd(-50,W+50), y:y==null?rnd(-H,0):y, l:rnd(6,12)*(lvl>2?1.25:1), v:rnd(7,11)*(lvl>2?1.2:1), a:rnd(.16,.38)}; }
+  function flake(y){ return {k:'s', x:rnd(0,W), y:y==null?rnd(-20,0):y, r:rnd(.8,2.2), v:rnd(.35,.9), p:rnd(0,6.28), w:rnd(.3,1), a:rnd(.35,.85)}; }
+
+  function build(){
+    P = []; fogs = []; stars = []; var A = area();
+    var nR = {1:70,2:150,3:280}[lvl]*A, nS = {1:60,2:130,3:240}[lvl]*A;
+    if(mode==='rain'||mode==='thunder') for(var i=0;i<nR;i++) P.push(drop(rnd(-H,H)));
+    if(mode==='snow') for(i=0;i<nS;i++) P.push(flake(rnd(0,H)));
+    if(mode==='sleet'){ for(i=0;i<nR*.5;i++) P.push(drop(rnd(-H,H))); for(i=0;i<nS*.5;i++) P.push(flake(rnd(0,H))); }
+    if(mode==='fog') for(i=0;i<5;i++) fogs.push({x:rnd(0,W), y:rnd(0,H), r:rnd(W*.4,W*.8), v:rnd(.08,.2)*(Math.random()<.5?-1:1)});
+    if(mode==='clear' && !isDay()) for(i=0;i<110*A*(lvl/2);i++) stars.push({x:rnd(0,W), y:rnd(0,H*.75), r:rnd(.4,1.3), p:rnd(0,6.28), s:rnd(.5,1.6)});
+    nextFlash = performance.now() + rnd(3000,8000);
+  }
+
+  function frame(now){
+    raf = requestAnimationFrame(frame);
+    if(document.hidden || now - last < 33) return;          /* ~30 fps */
+    var dt = Math.min(3, (now - last)/33); last = now; t0 += dt;
+    ctx.clearRect(0,0,W,H);
+    var wind = mode==='thunder' ? 1.8 : .9;
+
+    if(mode==='clear'){
+      if(isDay()){
+        var pulse = .5 + .5*Math.sin(t0*.02), R = Math.max(W,H)*1.1;
+        var g = ctx.createRadialGradient(W*.92,-H*.05,0,W*.92,-H*.05,R);
+        g.addColorStop(0,'rgba(255,214,140,'+(.13+.04*pulse)*(lvl/2)+')'); g.addColorStop(.45,'rgba(255,190,110,'+.04*(lvl/2)+')'); g.addColorStop(1,'rgba(255,190,110,0)');
+        ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+      } else stars.forEach(function(s){
+        ctx.globalAlpha = .25 + .55*(.5+.5*Math.sin(t0*.05*s.s + s.p));
+        ctx.fillStyle = '#dfe9ff'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.28); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    if(mode==='fog') fogs.forEach(function(f){
+      f.x += f.v*dt; if(f.x - f.r > W) f.x = -f.r; if(f.x + f.r < 0) f.x = W + f.r;
+      var g = ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r);
+      g.addColorStop(0,'rgba(190,205,225,.09)'); g.addColorStop(1,'rgba(190,205,225,0)');
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    });
+
+    ctx.lineCap = 'round';
+    for(var i=0;i<P.length;i++){ var p = P[i];
+      if(p.k==='r'){
+        p.y += p.v*dt; p.x += wind*dt;
+        if(p.y > H){ P[i] = drop(rnd(-60,-10)); continue; }
+        ctx.strokeStyle = 'rgba(165,200,255,'+p.a+')'; ctx.lineWidth = 1.1;
+        ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x - wind*p.l/p.v, p.y - p.l); ctx.stroke();
+      } else {
+        p.y += p.v*dt; p.p += .02*dt; p.x += (Math.sin(p.p)*p.w + .25)*dt;
+        if(p.y > H+5){ P[i] = flake(-5); continue; }
+        ctx.fillStyle = 'rgba(240,246,255,'+p.a+')'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.28); ctx.fill();
+      }
+    }
+
+    if(mode==='thunder'){
+      if(now > nextFlash){ flash = .22; nextFlash = now + rnd(6000,15000); setTimeout(function(){ flash = .16; }, 140); }
+      if(flash > 0.005){ ctx.fillStyle = 'rgba(200,215,255,'+flash+')'; ctx.fillRect(0,0,W,H); flash *= Math.pow(.85, dt); }
+    }
+  }
+
+  window.wxSet = function(sym){
+    var m = force ? fromForce(force) : fromSym(sym);
+    if(m[0]===mode && m[1]===lvl) return;
+    mode = m[0]; lvl = Math.max(1, Math.min(3, m[1])); build();
+    cv.style.display = mode==='none' ? 'none' : 'block';
+  };
+  if(window.ResizeObserver) new ResizeObserver(resize).observe(cv.parentNode); else addEventListener('resize', resize); resize();
+  wxSet(window.wxSym);
+  /* klart: växla sol/stjärnor vid gryning/skymning */
+  setInterval(function(){ if(mode==='clear') build(); }, 10*60*1000);
+  raf = requestAnimationFrame(frame);
 })();
 </script>
 </body>
