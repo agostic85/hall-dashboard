@@ -329,6 +329,15 @@ body{background:
 .btn.primary,.rbtn.on,.rbtn.sp-play.on{background:linear-gradient(135deg,var(--pink),var(--cyan));border-color:transparent;color:#120612}
 .on .switch{background:linear-gradient(90deg,var(--pink),var(--cyan))}
 .dim{background:linear-gradient(90deg,#2a1430,var(--pink))}
+/* === Datorn: CPU/GPU från LibreHardwareMonitor === */
+.hw{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem}
+.hw div{position:relative;overflow:hidden;border-radius:1rem;padding:.55rem .7rem 1.6rem;background:linear-gradient(160deg,#2a303c,#222731);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.hw small{position:relative;z-index:1;display:block;color:var(--muted);font-size:.72rem;letter-spacing:.06em}
+.hw b{position:relative;z-index:1;font-family:var(--disp);font-size:1.4rem;font-weight:400}
+.hw b i{font-style:normal;font-size:.7rem;color:var(--muted);margin-left:.1rem}
+.hw b.hot{color:var(--coral)}
+.hw svg{position:absolute;left:0;bottom:0;width:100%;height:60%}
+.hw .off{grid-column:1/-1;color:var(--muted);font-size:.8rem;padding:.6rem .7rem;background:none;box-shadow:none}
 </style>
 </head>
 <body>
@@ -367,6 +376,7 @@ body{background:
     <symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/></symbol>
     <symbol id="i-pc" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
     <symbol id="i-curtain" viewBox="0 0 24 24"><path d="M3 3h18M6 3c0 6 1 12 4 18H5M18 3c0 6-1 12-4 18h5"/></symbol>
+    <linearGradient id="hwg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4fa3" stop-opacity=".55"/><stop offset="1" stop-color="#ff4fa3" stop-opacity="0"/></linearGradient>
   </defs>
 </svg>
 
@@ -382,6 +392,7 @@ body{background:
   <main>
     <section class="col col-left">
       <div class="card car" id="car"></div>
+      <div class="card" id="hw"></div>
       <div class="card" id="climate" style="flex:1"></div>
     </section>
 
@@ -1241,6 +1252,45 @@ $('gear').addEventListener('click', function(){
   $('setScrim').classList.add('show');
 });
 
+/* ===================== Datorn (LibreHardwareMonitor) ===================== */
+var HW = {
+  // LibreHardwareMonitor → Alternativ → Fjärrwebbserver → Kör. Första adressen som svarar används.
+  urls: ['http://127.0.0.1:8085/data.json', 'http://192.168.68.62:8085/data.json'],
+  tiles: [
+    {name:'5080',  id:'/gpu-nvidia/0/temperature/0', unit:'°', max:100, hot:80},
+    {name:'98X3D', id:'/amdcpu/0/temperature/2',     unit:'°', max:100, hot:85},
+    {name:'5080',  id:'/gpu-nvidia/0/load/0',        unit:'%', max:100},
+    {name:'98X3D', id:'/amdcpu/0/load/0',            unit:'%', max:100}
+  ],
+  hist: {}, ok: false, i: 0
+};
+function hwPoll(){
+  var url = HW.urls[HW.i], loop = /\/\/(127\.0\.0\.1|localhost)/.test(url);
+  fetch(url, loop ? {cache:'no-store'} : {cache:'no-store', targetAddressSpace:'local'})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(d){
+      var val = {};
+      (function walk(n){ if(n.SensorId && !(n.SensorId in val)) val[n.SensorId] = parseFloat(String(n.Value).replace(',','.')); (n.Children||[]).forEach(walk); })(d);
+      HW.tiles.forEach(function(t){ var h = HW.hist[t.id] = HW.hist[t.id] || []; h.push(val[t.id]); if(h.length > 60) h.shift(); });
+      HW.ok = true; renderHW();
+    })
+    .catch(function(){ HW.i = (HW.i+1) % HW.urls.length; if(HW.ok || !$('hw').innerHTML){ HW.ok = false; renderHW(); } });
+}
+function hwSpark(h, max){
+  var n = h.length; if(n < 2) return '';
+  var pts = h.map(function(y, i){ return (i/(n-1)*100).toFixed(1)+','+(40-Math.min(Math.max(y||0,0),max)/max*38).toFixed(1); }).join(' ');
+  return '<svg viewBox="0 0 100 40" preserveAspectRatio="none"><polygon points="0,40 '+pts+' 100,40" fill="url(#hwg)" stroke="none"/><polyline points="'+pts+'" fill="none" stroke="var(--pink)" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>';
+}
+function renderHW(){
+  var h = '<div class="head" style="margin-bottom:.6rem"><h2>'+icon('pc')+'MONSTRET</h2></div><div class="hw">';
+  if(!HW.ok) h += '<div class="off">Ingen kontakt med LibreHardwareMonitor. Starta programmet och slå på Fjärrwebbserver (port 8085).</div>';
+  else HW.tiles.forEach(function(t){
+    var hs = HW.hist[t.id], cur = hs[hs.length-1];
+    h += '<div><small>'+t.name+'</small><b'+(t.hot && cur>=t.hot?' class="hot"':'')+'>'+num(cur,0)+'<i>'+t.unit+'</i></b>'+hwSpark(hs, t.max)+'</div>';
+  });
+  $('hw').innerHTML = h+'</div>';
+}
+
 /* ===================== Start ===================== */
 if(DEMO){ setConn('demo','Demoläge'); for(var k=0;k<40;k++){ poll(); } }
 else setConn('', 'Ansluter…');
@@ -1248,6 +1298,7 @@ renderClock(); setInterval(renderClock, 10000);
 /* OLED: flytta hela ytan några pixlar var 3:e minut så att statiska delar inte bränns in */
 setInterval(function(){ var r = function(){ return Math.round(Math.random()*6-3); }; document.querySelector('.app').style.transform = 'translate('+r()+'px,'+r()+'px)'; }, 3*60*1000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
+hwPoll(); setInterval(hwPoll, 2000);
 spPoll(); setInterval(spPoll, 5000); spDevices(); setInterval(spDevices, 30000);
 
 /* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
