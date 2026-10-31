@@ -524,6 +524,7 @@ function poll(){
         s[c] = caps[c].value; if(caps[c].lastUpdated) s['_lu_'+c] = caps[c].lastUpdated;
       });
     });
+    pickNetatmo(devs);
     setConn('ok','Ansluten');
     pushPower(); render();
   }).catch(function(e){
@@ -561,6 +562,13 @@ function agoTxt(min){ return min==null ? '' : min < 1 ? 'nyss' : min < 60 ? min+
 function fmtTs(t, am){ var d = new Date(t), hm = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); return am<1200 ? hm : d.getDate()+' '+['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]+' '+hm; }
 var OFFICE_SENSOR = 'c5812be5-52d1-41d1-a8d2-447b48ddf641'; // Närvarosensor Kontor (Aqara FP300)
 function fresh(id, cap, maxMin){ var s = state[id]; if(!s || s[cap]==null) return false; var lu = s['_lu_'+cap]; return !lu || (Date.now()-Date.parse(lu)) < maxMin*60000; }
+function pickNetatmo(devs){   // Netatmo får nytt ID om den paras om i Homey – ta då den inneenhet (CO₂ + ljud) som uppdaterats senast
+  var cur = devs[D.indoor]; if(cur && cur.available!==false && (cur.capabilitiesObj||{}).measure_co2) return;
+  var best = null, bt = -1;
+  Object.keys(devs).forEach(function(id){ var c = devs[id].capabilitiesObj || {}; if(!c.measure_co2 || !c.measure_noise || devs[id].available===false) return;
+    var t = Date.parse(c.measure_co2.lastUpdated) || 0; if(t > bt){ bt = t; best = id; } });
+  if(best) D.indoor = best;
+}
 function netatmoOk(){ return fresh(D.indoor, 'measure_co2', 120); }   // Netatmo räknas som frånkopplad om CO₂ inte ändrats på 2 h
 function officeTemp(){ var t = v(OFFICE_SENSOR,'measure_temperature'); return t!=null ? t : (netatmoOk() ? v(D.indoor,'measure_temperature') : null); }
 function officeHum(){ var h = v(OFFICE_SENSOR,'measure_humidity'); return h!=null ? h : (netatmoOk() ? v(D.indoor,'measure_humidity') : null); }
