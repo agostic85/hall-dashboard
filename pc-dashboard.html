@@ -685,7 +685,7 @@ function ageMin(s){
 function agoTxt(min){ return min==null ? '' : min < 1 ? 'nyss' : min < 60 ? min+' min sedan' : min < 1440 ? Math.round(min/60)+' h sedan' : Math.round(min/1440)+' d sedan'; }
 function fmtTs(t, am){ var d = new Date(t), hm = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); return am<1200 ? hm : d.getDate()+' '+['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]+' '+hm; }
 var OFFICE_SENSOR = 'c5812be5-52d1-41d1-a8d2-447b48ddf641'; // Närvarosensor Kontor (Aqara FP300)
-function fresh(id, cap, maxMin){ var s = state[id]; if(!s || s[cap]==null) return false; var lu = s['_lu_'+cap]; return !lu || (Date.now()-Date.parse(lu)) < maxMin*60000; }
+function fresh(id, cap, maxMin){ var s = state[id]; if(!s || s[cap]==null) return false; var lu = s['_lu_'+cap]; return !lu || (Date.now()-new Date(lu).getTime()) < maxMin*60000; }   // lastUpdated kan vara ISO-text eller ms-tal
 function pickNetatmo(devs){   // Netatmo får nytt ID om den paras om i Homey – ta då den inneenhet (CO₂ + ljud) som uppdaterats senast
   var cur = devs[D.indoor]; if(cur && cur.available!==false && (cur.capabilitiesObj||{}).measure_co2) return;
   var best = null, bt = -1;
@@ -696,7 +696,7 @@ function pickNetatmo(devs){   // Netatmo får nytt ID om den paras om i Homey �
 function netatmoWhy(){   // visas i klimatkortet när Netatmo räknas som frånkopplad
   var s = state[D.indoor]; if(!s) return 'Netatmo hittas inte i Homey';
   if(s.measure_co2==null) return 'Netatmo saknar CO₂-värde';
-  var lu = Date.parse(s._lu_measure_co2); return isNaN(lu) ? 'Netatmo ej ansluten' : 'Netatmo: senaste värde '+agoTxt(Math.round((Date.now()-lu)/60000));
+  var lu = new Date(s._lu_measure_co2).getTime(); return isNaN(lu) ? 'Netatmo: okänd tidsstämpel' : 'Netatmo: senaste värde '+agoTxt(Math.round((Date.now()-lu)/60000));
 }
 function netatmoOk(){ return fresh(D.indoor, 'measure_co2', 120); }   // Netatmo räknas som frånkopplad om CO₂ inte ändrats på 2 h
 function officeTemp(){ var t = v(OFFICE_SENSOR,'measure_temperature'); return t!=null ? t : (netatmoOk() ? v(D.indoor,'measure_temperature') : null); }
