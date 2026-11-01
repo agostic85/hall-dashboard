@@ -275,6 +275,28 @@ body.night #wxfx{opacity:.5}
 html{background:#0d1015}
 .app{padding-top:calc(.6rem + env(safe-area-inset-top,0px));padding-bottom:calc(.6rem + env(safe-area-inset-bottom,0px))}
 @media (max-width:560px){.app{padding-top:calc(1.6rem + env(safe-area-inset-top,0px))}}
+/* Tidsväljare med rullhjul (ersätter type=time – inget tangentbord behövs) */
+.tm-pick{display:flex;align-items:center;gap:.7rem}
+.tm-wheels{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:.1rem;height:9rem;padding:0 .5rem;border-radius:1rem;
+  background:linear-gradient(160deg,#1b2029,#14181f);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);transition:opacity .25s}
+.tm-wheels::before{content:"";position:absolute;left:.5rem;right:.5rem;top:50%;height:2.2rem;margin-top:-1.1rem;border-radius:.7rem;
+  background:linear-gradient(160deg,rgba(90,169,255,.16),rgba(90,169,255,.07));box-shadow:inset 0 0 0 1px rgba(90,169,255,.25);pointer-events:none}
+.tm-wheel{position:relative;width:4.2rem;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;
+  padding:3.4rem 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 32%,#000 68%,transparent 100%);mask-image:linear-gradient(transparent 0,#000 32%,#000 68%,transparent 100%)}
+.tm-wheel::-webkit-scrollbar{display:none}
+.tm-wheel div{height:2.2rem;line-height:2.2rem;text-align:center;scroll-snap-align:center;font-size:1.3rem;color:var(--faint);transition:color .15s,font-size .15s}
+.tm-wheel div.sel{color:var(--text);font-size:1.55rem;font-weight:600}
+.tm-colon{font-size:1.5rem;font-weight:600;color:var(--muted);z-index:1;padding-bottom:.15rem}
+.tm-side{display:flex;flex-direction:column;gap:.45rem;align-items:stretch;min-width:6.2rem}
+.tm-side .btn{justify-content:center;padding:.55rem .8rem;font-size:.85rem}
+.tm-side .btn.on{background:var(--blue);color:#06172b}
+.tm-val{text-align:center;font-family:var(--disp);font-size:.95rem;color:var(--text)}
+.tm-pick.allday .tm-wheels{opacity:.35}
+.tm-pick.allday .tm-val{visibility:hidden}
+.tm-pick.allday .tm-wheels::before{background:rgba(255,255,255,.04);box-shadow:none}
+#reload.spin svg{animation:rlspin .8s linear infinite}
+@keyframes rlspin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -290,6 +312,7 @@ html{background:#0d1015}
     <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></symbol>
     <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15a4 4 0 0 1-.5-8A6 6 0 0 1 18 8a3.5 3.5 0 0 1 0 7M8 18l-1 2M12 18l-1 2M16 18l-1 2"/></symbol>
     <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a5 5 0 0 1-.6-10A6.5 6.5 0 0 1 18.5 9 4.5 4.5 0 0 1 18 18z"/></symbol>
+    <symbol id="i-reload" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16"/><path d="M20 21v-5h-5"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
     <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 3v9M6.3 7a8 8 0 1 0 11.4 0"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7M5 10v10h14V10"/></symbol>
@@ -316,6 +339,7 @@ html{background:#0d1015}
     <div class="date"><b id="greet">Hej</b><span id="date"></span></div>
     <div class="alerts" id="alerts"></div>
     <div class="chip" id="conn"><span class="status" id="dot"></span><span id="connTxt">Startar…</span></div>
+    <button class="iconbtn" id="reload" aria-label="Uppdatera dashboarden"><svg><use href="#i-reload"/></svg></button>
     <button class="iconbtn" id="gear" aria-label="Inställningar"><svg><use href="#i-gear"/></svg></button>
   </header>
 
@@ -369,7 +393,7 @@ html{background:#0d1015}
     <h3>Lägg till i kalendern</h3>
     <div class="field"><label>Vad?</label><input id="calS" maxlength="120" autocomplete="off" placeholder="t.ex. Tandläkare Bianca"></div>
     <div class="field"><label>Dag</label><div class="seg-days" id="calDays"></div></div>
-    <div class="field"><label>Tid – valfritt, tomt blir heldag</label><div class="tm-row"><input id="calT" type="time"><button class="btn" data-act="calnotime">Heldag</button></div></div>
+    <div class="field"><label>Tid – rulla för att välja, annars heldag</label><div class="tm-pick allday" id="calPick"><div class="tm-wheels" id="calWheels"><div class="tm-wheel" id="calH"></div><span class="tm-colon">:</span><div class="tm-wheel" id="calM"></div></div><div class="tm-side"><div class="tm-val" id="calTv">Heldag</div><button class="btn on" data-act="calnotime" id="calAllBtn">Heldag</button></div></div><input type="hidden" id="calT"></div>
     <div class="acts"><button class="btn" data-act="calclose">Avbryt</button><button class="btn primary" data-act="calsave">Spara</button></div>
   </div>
 </div>
@@ -791,8 +815,37 @@ function loadCal(){
 }
 var calSel = null;
 function openCalAdd(){
-  $('calS').value = ''; $('calT').value = ''; calSel = ymd(new Date()); renderCalDays();
-  $('calScrim').classList.add('show'); setTimeout(function(){ $('calS').focus(); }, 60);
+  $('calS').value = ''; calSel = ymd(new Date()); renderCalDays();
+  $('calScrim').classList.add('show');
+  /* rullhjulen startar på nästa hela timme, men heldag är förvalt tills man rullar */
+  tmInit(); calAllDay = true; var nh = (new Date().getHours()+1)%24;
+  requestAnimationFrame(function(){ tmSet($('calH'), nh); tmSet($('calM'), 0); tmSync(); });
+  setTimeout(function(){ $('calS').focus(); }, 60);
+}
+/* ---- Tidsväljare (rullhjul) ---- */
+var calAllDay = true, tmReady = false, tmRaf = 0;
+function tmInit(){
+  if(tmReady) return; tmReady = true;
+  function fill(el, n, step){ var h=''; for(var i=0;i<n;i+=step){ var s=('0'+i).slice(-2); h+='<div data-v="'+s+'">'+s+'</div>'; } el.innerHTML = h; }
+  fill($('calH'), 24, 1); fill($('calM'), 60, 5);
+  ['calH','calM'].forEach(function(id){
+    var el = $(id);
+    el.addEventListener('scroll', function(){ cancelAnimationFrame(tmRaf); tmRaf = requestAnimationFrame(tmSync); }, {passive:true});
+    el.addEventListener('click', function(e){ var d = e.target.closest('div[data-v]'); if(!d) return; calAllDay = false; tmSet(el, [].indexOf.call(el.children, d), true); tmSync(); });
+  });
+  $('calWheels').addEventListener('pointerdown', function(){ if(calAllDay){ calAllDay = false; tmSync(); } });
+  $('calWheels').addEventListener('wheel', function(){ if(calAllDay){ calAllDay = false; tmSync(); } }, {passive:true});
+}
+function tmIdx(el){ var ih = el.firstChild ? el.firstChild.offsetHeight : 0; if(!ih) return 0; return Math.max(0, Math.min(el.children.length-1, Math.round(el.scrollTop/ih))); }
+function tmSet(el, i, smooth){ var ih = el.firstChild.offsetHeight; if(el.scrollTo) el.scrollTo({top:i*ih, behavior:smooth?'smooth':'auto'}); else el.scrollTop = i*ih; }
+function tmSync(){
+  var h = $('calH'), m = $('calM'), hi = tmIdx(h), mi = tmIdx(m);
+  [h,m].forEach(function(el, k){ var s = k ? mi : hi; for(var i=0;i<el.children.length;i++) el.children[i].classList.toggle('sel', i===s); });
+  var tv = h.children[hi].dataset.v + ':' + m.children[mi].dataset.v;
+  $('calT').value = calAllDay ? '' : tv;
+  $('calTv').textContent = calAllDay ? 'Heldag' : 'kl ' + tv;
+  $('calPick').classList.toggle('allday', calAllDay);
+  $('calAllBtn').classList.toggle('on', calAllDay);
 }
 function renderCalDays(){
   var t = new Date(), h = '';
@@ -1017,7 +1070,7 @@ document.addEventListener('click', function(e){
     case 'dimoff': CONFIG.lights[dimIdx].ids.forEach(function(id){ setCap(id,'onoff',false); }); closeDim(); break;
     case 'caladd': openCalAdd(); break;
     case 'calday': calSel = t.dataset.d; renderCalDays(); break;
-    case 'calnotime': $('calT').value = ''; break;
+    case 'calnotime': calAllDay = true; tmSync(); break;
     case 'calclose': $('calScrim').classList.remove('show'); break;
     case 'calsave': saveCal(); break;
     case 'dimclose': closeDim(); break;
@@ -1029,6 +1082,13 @@ document.addEventListener('click', function(e){
 });
 function closeDim(){ $('dimScrim').classList.remove('show'); dimIdx = null; }
 $('dimScrim').addEventListener('click', function(e){ if(e.target===this) closeDim(); });
+/* Uppdatera-knappen: motsvarar Ctrl+F5 – töm cache och hämta senaste versionen */
+$('reload').addEventListener('click', function(){
+  this.classList.add('spin'); toast('Uppdaterar…');
+  function go(){ location.reload(); }
+  try{ if(window.caches && caches.keys){ caches.keys().then(function(k){ return Promise.all(k.map(function(n){ return caches.delete(n); })); }).then(go, go); return; } }catch(e){}
+  go();
+});
 $('gear').addEventListener('click', function(){
   $('fAddr').value = cfg.address; $('fTok').value = cfg.token;
   $('setScrim').classList.add('show');
