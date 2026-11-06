@@ -397,6 +397,10 @@ button,.chip,.sp-dev,.vol{touch-action:manipulation;-webkit-tap-highlight-color:
 .pc-bar span{position:relative;font-size:1.2rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .pc-kv{display:flex;justify-content:space-between;margin-top:.45rem;font-size:1rem;color:var(--muted)}
 .pc-kv b{color:var(--text);font-weight:600}
+/* === Ingen rubrikrad: mer plats. Visa bara anslutningsfel === */
+header{display:none}
+.off-chip{display:none;position:fixed;left:50%;bottom:.8rem;transform:translateX(-50%);z-index:15}
+body.offline .off-chip{display:inline-flex}
 </style>
 </head>
 <body>
@@ -447,6 +451,7 @@ button,.chip,.sp-dev,.vol{touch-action:manipulation;-webkit-tap-highlight-color:
     <div class="chip" id="conn"><span class="status" id="dot"></span><span id="connTxt">Startar…</span></div>
     <button class="iconbtn" id="gear" aria-label="Inställningar"><svg><use href="#i-gear"/></svg></button>
   </header>
+  <div class="chip bad off-chip" id="offChip"></div>
 
   <main>
     <section class="col col-left">
@@ -686,6 +691,8 @@ function api(method, path, body, signal){
 function setConn(kind, txt){
   $('dot').className = 'status ' + kind;
   $('connTxt').textContent = txt;
+  $('offChip').textContent = txt;
+  document.body.classList.toggle('offline', kind==='err');
 }
 
 function poll(){
@@ -1326,6 +1333,13 @@ document.addEventListener('click', function(e){
 });
 function closeDim(){ $('dimScrim').classList.remove('show'); dimIdx = null; }
 $('dimScrim').addEventListener('click', function(e){ if(e.target===this) closeDim(); });
+/* Inställningar utan rubrikrad: håll inne på ett kortnamn i 1,5 s */
+(function(){
+  var t = null;
+  function stop(){ if(t){ clearTimeout(t); t = null; } }
+  document.addEventListener('pointerdown', function(e){ if(e.target.closest && e.target.closest('.card h2')){ stop(); t = setTimeout(function(){ t = null; $('gear').click(); }, 1500); } });
+  ['pointerup','pointercancel','pointerleave'].forEach(function(n){ document.addEventListener(n, stop); });
+})();
 $('gear').addEventListener('click', function(){
   $('fAddr').value = cfg.address; $('fTok').value = cfg.token;
   $('setScrim').classList.add('show');
