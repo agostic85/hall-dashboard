@@ -320,7 +320,7 @@ html{background:#0d1015}
 .nw-track{will-change:transform}
 .nw-gap{height:1.4rem}
 .tag{display:inline-block;font-size:.6rem;font-weight:600;letter-spacing:.04em;padding:.06rem .4rem;border-radius:99px;margin-right:.4rem;vertical-align:.08rem}
-.tag.p4{background:rgba(90,169,255,.16);color:var(--blue)} .tag.ekot{background:rgba(167,139,250,.16);color:var(--violet)} .tag.ab{background:rgba(246,184,75,.16);color:var(--warm)}
+.tag.p4{background:rgba(90,169,255,.16);color:var(--blue)} .tag.ekot{background:rgba(167,139,250,.16);color:var(--violet)} .tag.usa{background:rgba(255,120,120,.15);color:#ff9a9a}
 .legend{display:flex;gap:.2rem;align-items:center}
 .po-row{display:grid;grid-template-columns:3.1rem 1fr;gap:.55rem;padding:.36rem 0;border-bottom:1px solid var(--line)}
 .po-row:last-child{border:0}
@@ -1036,23 +1036,24 @@ function newsTagsTick(){
   });
 }
 function txt(html){ var d = document.createElement('div'); d.innerHTML = html||''; var p = d.querySelector('li,p'); return ((p||d).textContent||'').replace(/\s+/g,' ').trim(); }
-var NEWS_LBL = {p4:['P4','P4 JÄMTLAND'], ekot:['EKOT','EKOT'], ab:['AB','AFTONBLADET']};
-/* Aftonbladet hämtas av Homey-flödet "Hall-dashboard: hämta Aftonbladet" (webbläsaren får inte läsa deras flöde direkt) */
-var AB_VAR = '154c343f-984a-415f-8aad-b2e2095841a0';
-function loadAB(){
+var NEWS_LBL = {p4:['P4','P4 JÄMTLAND'], ekot:['EKOT','EKOT'], usa:['USA','USA-POLITIK']};
+/* USA-politik/Trump hämtas av Homey-flödet "Hall-dashboard: hämta USA-nyheter (Trump)" via Google Nyheter
+   (svenska medier, Aftonbladet bortfiltrerat). Webbläsaren får inte läsa flödet direkt, därför går det via Homey. */
+var USA_VAR = '154c343f-984a-415f-8aad-b2e2095841a0', USA_MAX = 6;
+function loadUSA(){
   if(DEMO) return Promise.resolve([]);
-  return api('GET', '/manager/logic/variable/'+AB_VAR).then(function(v){
+  return api('GET', '/manager/logic/variable/'+USA_VAR).then(function(v){
     var j = JSON.parse(v.value || '{}');
     return (j.it||[]).map(function(x){
-      var html = function(t){ return String(t||'').split('\n').filter(Boolean).map(function(p){ return '<p>'+esc(p)+'</p>'; }).join(''); };
-      return {k:'ab', n:'Aftonbladet', t:x.t, s:x.s||'', sh:html(x.s), c:html(x.c), u:x.l||'', d:new Date(x.d)};
+      var src = String(x.p || 'okänd källa').split(' – ')[0];
+      return {k:'usa', n:src, t:x.t, s:'Källa: '+src, sh:'<p>Källa: '+esc(src)+'</p>', c:'<p>Google Nyheter visar bara rubriken – hela artikeln finns hos '+esc(src)+'.</p>', u:x.l||'', d:new Date(x.d)};
     });
   }).catch(function(){ return []; });
 }
 /* Dubbletter: samma händelse från flera källor visas bara en gång.
    Rubrikerna jämförs på viktiga ord (småord bort, ordstam = 5 första tecknen).
-   Delar de minst 60 % av orden räknas de som samma nyhet. Prioritet: P4 Jämtland > Ekot > Aftonbladet. */
-var NEWS_PRIO = {p4:0, ekot:1, ab:2};
+   Delar de minst 60 % av orden räknas de som samma nyhet. Prioritet: P4 Jämtland > Ekot > USA-flödet. */
+var NEWS_PRIO = {p4:0, ekot:1, usa:2};
 var NEWS_STOP = ' och att det som för med har inte den till var från efter när kan ska nya nytt över under sig han hon man där vid mot blir får efter just mer än även hur vad ett en på av är om i ';
 function nwords(t){
   var w = String(t).toLowerCase().replace(/^just nu:?\s*/,'').replace(/[^a-zåäöéü0-9 ]+/g,' ').split(/\s+/), s = {};
@@ -1081,9 +1082,10 @@ function loadNews(){
         var ln = e.querySelector('link'); return {k:src.k, n:src.n, t:q('title').trim(), s:txt(q('summary,description')), sh:q('summary,description'), c:q('content'), u:ln ? (ln.getAttribute('href')||ln.textContent) : '', d:new Date(q('updated,pubDate,published'))};
       });
     }).catch(function(){ return []; });
-  }).concat([loadAB()])).then(function(all){
+  }).concat([loadUSA()])).then(function(all){
     var a = [].concat.apply([], all).filter(function(x){ return x.t && !isNaN(x.d) && !NEWS_SKIP.test(x.t + ' ' + x.s); });
     a = dedupNews(a);
+    var nu = 0; a = a.filter(function(x){ return x.k !== 'usa' || ++nu <= USA_MAX; });   /* högst 6 USA-nyheter efter dubblettrensning */
     a.sort(function(p,q){ return q.d - p.d; });
     if(a.length){ newsErr = ''; newsApply(a.slice(0, 16)); }
     else if(!news){ newsErr = 'Kunde inte hämta nyheter'; renderNews(); }
@@ -1095,7 +1097,7 @@ function whenLbl(d){
 }
 function renderNews(){
   var el = $('news'); if(!el) return;
-  var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4 JÄMTLAND</span><span class="tag ekot">EKOT</span><span class="tag ab">AFTONBLADET</span></span></div>';
+  var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4 JÄMTLAND</span><span class="tag ekot">EKOT</span><span class="tag usa">USA</span></span></div>';
   if(!news){ el.innerHTML = head + '<div class="sub">'+(newsErr||'Hämtar nyheter…')+'</div>'; return; }
   var rows = news.map(function(x,i){
     var nw = isFresh(x);
