@@ -320,7 +320,7 @@ html{background:#0d1015}
 .nw-track{will-change:transform}
 .nw-gap{height:1.4rem}
 .tag{display:inline-block;font-size:.6rem;font-weight:600;letter-spacing:.04em;padding:.06rem .4rem;border-radius:99px;margin-right:.4rem;vertical-align:.08rem}
-.tag.p4{background:rgba(90,169,255,.16);color:var(--blue)} .tag.ekot{background:rgba(167,139,250,.16);color:var(--violet)}
+.tag.p4{background:rgba(90,169,255,.16);color:var(--blue)} .tag.ekot{background:rgba(167,139,250,.16);color:var(--violet)} .tag.ab{background:rgba(246,184,75,.16);color:var(--warm)}
 .legend{display:flex;gap:.2rem;align-items:center}
 .po-row{display:grid;grid-template-columns:3.1rem 1fr;gap:.55rem;padding:.36rem 0;border-bottom:1px solid var(--line)}
 .po-row:last-child{border:0}
@@ -1036,6 +1036,42 @@ function newsTagsTick(){
   });
 }
 function txt(html){ var d = document.createElement('div'); d.innerHTML = html||''; var p = d.querySelector('li,p'); return ((p||d).textContent||'').replace(/\s+/g,' ').trim(); }
+var NEWS_LBL = {p4:['P4','P4 JÄMTLAND'], ekot:['EKOT','EKOT'], ab:['AB','AFTONBLADET']};
+/* Aftonbladet hämtas av Homey-flödet "Hall-dashboard: hämta Aftonbladet" (webbläsaren får inte läsa deras flöde direkt) */
+var AB_VAR = '154c343f-984a-415f-8aad-b2e2095841a0';
+function loadAB(){
+  if(DEMO) return Promise.resolve([]);
+  return api('GET', '/manager/logic/variable/'+AB_VAR).then(function(v){
+    var j = JSON.parse(v.value || '{}');
+    return (j.it||[]).map(function(x){
+      var html = function(t){ return String(t||'').split('\n').filter(Boolean).map(function(p){ return '<p>'+esc(p)+'</p>'; }).join(''); };
+      return {k:'ab', n:'Aftonbladet', t:x.t, s:x.s||'', sh:html(x.s), c:html(x.c), u:x.l||'', d:new Date(x.d)};
+    });
+  }).catch(function(){ return []; });
+}
+/* Dubbletter: samma händelse från flera källor visas bara en gång.
+   Rubrikerna jämförs på viktiga ord (småord bort, ordstam = 5 första tecknen).
+   Delar de minst 60 % av orden räknas de som samma nyhet. Prioritet: P4 Jämtland > Ekot > Aftonbladet. */
+var NEWS_PRIO = {p4:0, ekot:1, ab:2};
+var NEWS_STOP = ' och att det som för med har inte den till var från efter när kan ska nya nytt över under sig han hon man där vid mot blir får efter just mer än även hur vad ett en på av är om i ';
+function nwords(t){
+  var w = String(t).toLowerCase().replace(/^just nu:?\s*/,'').replace(/[^a-zåäöéü0-9 ]+/g,' ').split(/\s+/), s = {};
+  w.forEach(function(x){ if(x.length < 3 || NEWS_STOP.indexOf(' '+x+' ') >= 0) return; s[x.slice(0,5)] = 1; });
+  return Object.keys(s);
+}
+function nsame(a, b){
+  var n = 0; a.forEach(function(x){ if(b.indexOf(x) >= 0) n++; });
+  var m = Math.min(a.length, b.length); return m >= 2 && n / m >= 0.6;
+}
+function dedupNews(list){
+  var keep = [];
+  list.slice().sort(function(p,q){ return (NEWS_PRIO[p.k]-NEWS_PRIO[q.k]) || (q.d - p.d); }).forEach(function(x){
+    x.w = nwords(x.t);
+    for(var i=0;i<keep.length;i++){ if(keep[i].t === x.t || nsame(keep[i].w, x.w)) return; }
+    keep.push(x);
+  });
+  return keep;
+}
 function loadNews(){
   Promise.all(NEWS_SRC.map(function(src){
     return fetch(src.u, {cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }).then(function(t){
@@ -1045,8 +1081,9 @@ function loadNews(){
         var ln = e.querySelector('link'); return {k:src.k, n:src.n, t:q('title').trim(), s:txt(q('summary,description')), sh:q('summary,description'), c:q('content'), u:ln ? (ln.getAttribute('href')||ln.textContent) : '', d:new Date(q('updated,pubDate,published'))};
       });
     }).catch(function(){ return []; });
-  })).then(function(all){
+  }).concat([loadAB()])).then(function(all){
     var a = [].concat.apply([], all).filter(function(x){ return x.t && !isNaN(x.d) && !NEWS_SKIP.test(x.t + ' ' + x.s); });
+    a = dedupNews(a);
     a.sort(function(p,q){ return q.d - p.d; });
     if(a.length){ newsErr = ''; newsApply(a.slice(0, 16)); }
     else if(!news){ newsErr = 'Kunde inte hämta nyheter'; renderNews(); }
@@ -1058,11 +1095,11 @@ function whenLbl(d){
 }
 function renderNews(){
   var el = $('news'); if(!el) return;
-  var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4 JÄMTLAND</span><span class="tag ekot">EKOT</span></span></div>';
+  var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4 JÄMTLAND</span><span class="tag ekot">EKOT</span><span class="tag ab">AFTONBLADET</span></span></div>';
   if(!news){ el.innerHTML = head + '<div class="sub">'+(newsErr||'Hämtar nyheter…')+'</div>'; return; }
   var rows = news.map(function(x,i){
     var nw = isFresh(x);
-    return '<div class="nw-row'+(nw?' fresh':'')+'" data-act="news" data-i="'+i+'"><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b>'+(nw?'<span class="tag ny">NY</span>':'')+'<span class="tag '+x.k+'">'+(x.k==='p4'?'P4':'EKOT')+'</span>'+esc(x.t)+'</b>'+
+    return '<div class="nw-row'+(nw?' fresh':'')+'" data-act="news" data-i="'+i+'"><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b>'+(nw?'<span class="tag ny">NY</span>':'')+'<span class="tag '+x.k+'">'+NEWS_LBL[x.k][0]+'</span>'+esc(x.t)+'</b>'+
       (x.s ? '<div class="nw-s">'+esc(x.s)+'</div>' : '')+'</div></div>';
   }).join('');
   el.innerHTML = head + '<div class="feed nw-feed"><div class="nw-track">' + rows + '<div class="nw-gap"></div></div></div>';
@@ -1088,7 +1125,7 @@ var newsOpen = -1;
 function openNews(i){
   var x = news && news[i]; if(!x) return; newsOpen = i;
   var seen = {}, parts = richText(x.sh).concat(richText(x.c)).filter(function(p){ if(seen[p.t] || /^Lyssna:/i.test(p.t) || /@sverigesradio\.se/i.test(p.t)) return false; seen[p.t] = 1; return true; });
-  $('newsMeta').innerHTML = '<span class="tag '+x.k+'">'+(x.k==='p4'?'P4 JÄMTLAND':'EKOT')+'</span>'+whenLbl(x.d);
+  $('newsMeta').innerHTML = '<span class="tag '+x.k+'">'+NEWS_LBL[x.k][1]+'</span>'+whenLbl(x.d);
   $('newsTitle').textContent = x.t;
   $('newsBody').innerHTML = parts.length ? parts.map(function(p){ return '<p class="'+(p.li?'li':p.h?'h':'')+'">'+esc(p.t)+'</p>'; }).join('') : '<p>Ingen text i flödet för den här nyheten.</p>';
   $('newsBody').scrollTop = 0;
