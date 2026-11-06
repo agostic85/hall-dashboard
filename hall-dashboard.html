@@ -339,6 +339,10 @@ html{background:#0d1015}
 .news-body p.li::before{content:"";position:absolute;left:.15rem;top:.62rem;width:.4rem;height:.4rem;border-radius:50%;background:var(--blue)}
 .news-body p.h{font-weight:600;color:var(--text);margin-top:.4rem}
 .news-sheet .acts{margin-top:.8rem}
+.tag.ny{background:rgba(62,207,142,.18);color:var(--good)}
+.nw-row.fresh{box-shadow:inset 3px 0 0 var(--good)}
+.nw-row.fresh.on{animation:nwpulse 2.4s ease-in-out 3}
+@keyframes nwpulse{50%{background:rgba(62,207,142,.12)}}
 .chip.msg{color:var(--blue);background:linear-gradient(160deg,#16243a,#121c2c)}
 </style>
 </head>
@@ -1004,7 +1008,33 @@ function sunRow(){
 /* ===================== Nyheter (Sveriges Radio: P4 Jämtland + Ekot) ===================== */
 var NEWS_SRC = [{k:'p4', n:'P4 Jämtland', u:'https://api.sr.se/api/rss/program/78'}, {k:'ekot', n:'Ekot', u:'https://api.sr.se/api/rss/program/83'}];
 var NEWS_SKIP = /P4-toppen/i;   // rubriker som aldrig ska visas (lägg till fler med |)
-var news = null, newsErr = '';
+var news = null, newsErr = '', newsSig = '', newsPending = null, newsStay = 0;
+var NEWS_NEW_MIN = 30;   // så länge en ny nyhet märks med "NY" (minuter)
+function nkey(x){ return x.k+'|'+x.t; }
+function isFresh(x){ return x.fs && Date.now() - x.fs < NEWS_NEW_MIN*60000; }
+/* Kommer det en nyhet som inte setts förut hamnar den överst direkt (väntar om man själv bläddrar/läser) */
+function newsApply(list){
+  var seen = {}, now = Date.now();
+  try{ seen = JSON.parse(localStorage.getItem('hallNewsSeen')||'{}') || {}; }catch(e){}
+  var first = !Object.keys(seen).length;
+  list.forEach(function(x){ var k = nkey(x); if(!seen[k]) seen[k] = first ? now - 864e5 : now; x.fs = seen[k]; });
+  var keep = {}; list.forEach(function(x){ keep[nkey(x)] = 1; });
+  for(var k in seen){ if(!keep[k] && now - seen[k] > 2*864e5) delete seen[k]; }
+  try{ localStorage.setItem('hallNewsSeen', JSON.stringify(seen)); }catch(e){}
+  var sig = list.map(nkey).join('\n');
+  if(news && sig === newsSig){ newsTagsTick(); return; }
+  newsSig = sig;
+  if(news && (newsOpen >= 0 || Date.now() < newsHold)){ newsPending = list; return; }
+  var had = !!news; news = list; renderNews(); if(had) newsStay = Date.now() + 25000;   /* ny nyhet: stå kvar överst en stund */
+}
+/* ta bort "NY" när tiden gått ut, utan att rendera om listan */
+function newsTagsTick(){
+  var f = newsFeed(); if(!f || !news) return;
+  [].forEach.call(f.children, function(r){
+    var x = news[+r.dataset.i]; if(!x || isFresh(x)) return;
+    r.classList.remove('fresh'); var t = r.querySelector('.tag.ny'); if(t) t.remove();
+  });
+}
 function txt(html){ var d = document.createElement('div'); d.innerHTML = html||''; var p = d.querySelector('li,p'); return ((p||d).textContent||'').replace(/\s+/g,' ').trim(); }
 function loadNews(){
   Promise.all(NEWS_SRC.map(function(src){
@@ -1018,8 +1048,8 @@ function loadNews(){
   })).then(function(all){
     var a = [].concat.apply([], all).filter(function(x){ return x.t && !isNaN(x.d) && !NEWS_SKIP.test(x.t + ' ' + x.s); });
     a.sort(function(p,q){ return q.d - p.d; });
-    if(a.length){ news = a.slice(0, 16); newsErr = ''; } else newsErr = 'Kunde inte hämta nyheter';
-    renderNews();
+    if(a.length){ newsErr = ''; newsApply(a.slice(0, 16)); }
+    else if(!news){ newsErr = 'Kunde inte hämta nyheter'; renderNews(); }
   });
 }
 function whenLbl(d){
@@ -1031,7 +1061,8 @@ function renderNews(){
   var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4 JÄMTLAND</span><span class="tag ekot">EKOT</span></span></div>';
   if(!news){ el.innerHTML = head + '<div class="sub">'+(newsErr||'Hämtar nyheter…')+'</div>'; return; }
   el.innerHTML = head + '<div class="feed nw-feed">' + news.map(function(x,i){
-    return '<div class="nw-row'+(i===0?' on':'')+'" data-act="news" data-i="'+i+'"><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b><span class="tag '+x.k+'">'+(x.k==='p4'?'P4':'EKOT')+'</span>'+esc(x.t)+'</b>'+
+    var nw = isFresh(x);
+    return '<div class="nw-row'+(i===0?' on':'')+(nw?' fresh':'')+'" data-act="news" data-i="'+i+'"><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b>'+(nw?'<span class="tag ny">NY</span>':'')+'<span class="tag '+x.k+'">'+(x.k==='p4'?'P4':'EKOT')+'</span>'+esc(x.t)+'</b>'+
       (x.s ? '<div class="nw-s">'+esc(x.s)+'</div>' : '')+'</div></div>';
   }).join('') + '</div>';
   newsIdx = 0; newsWire(el.querySelector('.nw-feed'));
@@ -1058,7 +1089,7 @@ function openNews(i){
   $('newsBody').scrollTop = 0;
   $('newsScrim').classList.add('show');
 }
-function closeNews(){ $('newsScrim').classList.remove('show'); newsOpen = -1; }
+function closeNews(){ $('newsScrim').classList.remove('show'); newsOpen = -1; if(newsPending && Date.now() >= newsHold){ news = newsPending; newsPending = null; renderNews(); newsStay = Date.now() + 25000; } }
 /* visa bara rader som får plats och rotera markeringen bland dem */
 function fitFeed(el){
   var f = el.querySelector('.feed'); if(!f) return 0;
@@ -1091,6 +1122,9 @@ function newsWire(f){
 }
 setInterval(function(){
   var f = newsFeed(); if(!f || newsOpen>=0 || document.hidden || Date.now() < newsHold) return;
+  if(newsPending){ news = newsPending; newsPending = null; renderNews(); newsStay = Date.now() + 25000; return; }   /* nya nyheter som väntat */
+  if(Date.now() < newsStay) return;
+  newsTagsTick();
   var atEnd = f.scrollTop + f.clientHeight >= f.scrollHeight - 4 || newsIdx >= f.children.length - 1;
   newsGo(atEnd ? 0 : newsIdx + 1, true);
 }, 7000);
@@ -1341,7 +1375,8 @@ loadCal(); setInterval(loadCal, 60*1000);
 loadFc(); setInterval(loadFc, 30*60*1000);
 
 loadDayInfo(); setInterval(loadDayInfo, 30*60*1000);
-loadNews(); setInterval(loadNews, 10*60*1000);
+loadNews(); setInterval(loadNews, 2*60*1000);   /* nyheter: var 2:a minut */
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) loadNews(); });
 loadPolice(); setInterval(loadPolice, 10*60*1000);
 loadWarn(); setInterval(loadWarn, 15*60*1000);
 window.addEventListener('resize', function(){ renderNews(); renderPolice(); });
