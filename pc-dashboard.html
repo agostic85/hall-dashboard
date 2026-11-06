@@ -375,6 +375,28 @@ button,.chip,.sp-dev,.vol{touch-action:manipulation;-webkit-tap-highlight-color:
 .car-img{flex:none;width:5.6rem;display:flex;align-items:center}
 .car-img img{width:100%;height:auto;filter:drop-shadow(0 .3rem .4rem rgba(0,0,0,.45))}
 .car-btns{margin-top:.7rem}
+
+/* === Bil: minimal === */
+.car .head{margin-bottom:.35rem}
+.car-mini{height:1.7rem;width:auto;margin-left:auto;margin-right:.3rem;filter:drop-shadow(0 .2rem .3rem rgba(0,0,0,.45))}
+.car .ring{width:3.7rem;height:3.7rem}
+.car .ring b{font-size:1rem}
+.car .ring small{display:none}
+.car-info{gap:.1rem}
+.car-info .range{font-size:1.15rem;display:flex;align-items:baseline;gap:.5rem;white-space:nowrap}
+.car-st{font-size:.75rem}
+.car-pre{flex:none;min-width:6.2rem;justify-content:center}
+/* === Skrivare: tydligare text === */
+.printer .nm{font-size:1.1rem}
+.stat{font-size:.85rem;padding:.25rem .7rem}
+.ptemps{display:flex;flex-wrap:wrap;gap:.25rem .9rem;font-size:.85rem;color:var(--muted);margin-top:.5rem}
+.ptemps b{color:var(--text);font-weight:500}
+/* C: stapel med text */
+.pc-bar{position:relative;height:2.3rem;border-radius:.7rem;background:rgba(255,255,255,.07);overflow:hidden;margin-top:.55rem;display:flex;align-items:center;justify-content:space-between;padding:0 .8rem}
+.pc-bar b{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(255,79,163,.75),rgba(34,211,238,.75))}
+.pc-bar span{position:relative;font-size:1.2rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.pc-kv{display:flex;justify-content:space-between;margin-top:.45rem;font-size:1rem;color:var(--muted)}
+.pc-kv b{color:var(--text);font-weight:600}
 </style>
 </head>
 <body>
@@ -807,22 +829,17 @@ function renderCar(){
   Object.keys(st0).forEach(function(k){ if(k.indexOf('_lu_')===0 && k!=='_lu_last_refresh'){ var t = Date.parse(st0[k]); if(t > lu) lu = t; } });
   if(lu) am = Math.max(0, Math.round((Date.now()-lu)/60000));
   $('car').innerHTML =
-    '<div class="head"><h2>'+icon('car')+'EV6</h2>'+
+    '<div class="head"><h2>'+icon('car')+'EV6</h2><img class="car-mini" src="'+CAR_IMG+'" alt="">'+
       (v(c,'locked')===false ? '<span class="chip warn tap" data-act="carlock" style="cursor:pointer">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
     '</div>'+
     '<div class="car-row">'+
       '<div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" stroke="#262c37"/><circle cx="50" cy="50" r="42" stroke="'+col+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" style="transition:stroke-dashoffset .6s"/></svg>'+
         '<div class="lbl"><div><b>'+num(b,0)+'%</b><small>batteri</small></div></div></div>'+
       '<div class="car-info">'+
-        '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span></div>'+
-        '<div class="sub" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+icon('bolt').replace('<svg>','<svg style="width:.9rem;height:.9rem;vertical-align:-2px">')+' '+status+'</div>'+
-        '<div class="sub">Avgång '+svDate(v(c,'departure_time'))+'</div>'+
+        '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span><span class="sub car-st" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+status+'</span></div>'+
         '<div class="sub car-age" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr)))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
       '</div>'+
-      '<div class="car-img"><img src="'+CAR_IMG+'" alt="EV6"></div>'+
-    '</div>'+
-    '<div class="car-btns">'+
-      '<button class="btn'+(clim?' active':'')+'" data-act="climate">'+icon('fire')+(clim?'Förvärmer':'Förvärm')+'</button>'+
+      '<button class="btn car-pre'+(clim?' active':'')+'" data-act="climate">'+icon('fire')+(clim?'Förvärmer':'Förvärm')+'</button>'+
     '</div>';
 }
 
@@ -1071,24 +1088,37 @@ function renderClimate(){
     '<button class="mode'+(pon?' on':'')+'" data-act="onoff" data-id="'+D.purifier+'" data-cap="onoff" style="margin-top:.6rem;border:0"><span>Luftrenare'+(pon&&pw!=null?' · '+num(pw,0)+' W':'')+'</span><span class="switch"></span></button>';
 }
 function fmtMin(m){ m = Math.round(m); return m>=60 ? Math.floor(m/60)+' h '+(m%60)+' min' : m+' min'; }
+function remMinutes(t){ if(t==null) return null; if(typeof t==='number') return t; var h=/(\d+)\s*h/.exec(t), m=/(\d+)\s*m/.exec(t); if(!h && !m) return null; return (h?+h[1]*60:0)+(m?+m[1]:0); }
+function fmtRem(min){ if(min==null) return '–'; min=Math.round(min); var h=Math.floor(min/60), m=min%60; return h ? h+' h '+(m<10?'0':'')+m+' min' : m+' min'; }
+function fmtDone(min){ if(min==null) return ''; var d=new Date(Date.now()+min*60000); return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); }
+function printerBlock(p){
+  var h = '<div class="printer"><div class="row1"><span class="nm">'+p.nm+'</span><span class="stat '+p.st[0]+'">'+esc(p.st[1])+'</span></div>';
+  if(p.run){
+    var pct = Math.round(p.pct||0), rem = fmtRem(p.remMin), done = fmtDone(p.remMin);
+    {
+      h += '<div class="pc-bar"><b style="width:'+pct+'%"></b><span class="l">'+pct+' %</span><span class="r">'+rem+'</span></div>'+
+        '<div class="pc-kv">'+(p.layers?'<span>Lager <b>'+esc(p.layers)+'</b></span>':'<span></span>')+'<span>Klar ca <b>'+done+'</b></span></div>';
+    }
+  }
+  h += '<div class="ptemps">'+p.temps.map(function(t){ return '<span>'+t[0]+' <b>'+t[1]+'°</b></span>'; }).join('')+'<span><b>'+p.w+'</b> W</span></div>';
+  if(p.lamp) h += '<button class="mode'+(p.lamp.on?' on':'')+'" data-act="onoff" data-id="'+p.lamp.id+'" data-cap="onoff.light_chamber" style="border:0;padding-bottom:0"><span>Kammarlampa</span><span class="switch"></span></button>';
+  return h + '</div>';
+}
 function renderPrinters(){
   var x = D.x2d, pr = v(x,'bambu_progress_percentage'), rem = v(x,'bambu_progress_time_remaining'), nt = v(x,'measure_temperature.nozzle_target')||0;
   var xRun = pr!=null && pr<100 && rem && rem!=='0 min';
   var xs = xRun ? ['run','Skriver'] : nt>0 ? ['run','Värmer'] : pr===100 ? ['done','Klar'] : ['','Ledig'];
-  var lc = !!v(x,'onoff.light_chamber');
   var h = '<div class="head" style="margin-bottom:.2rem"><h2>'+icon('printer')+'3D-skrivare</h2></div>';
-  h += '<div class="printer"><div class="row1"><span class="nm">Bambu X2D</span><span class="stat '+xs[0]+'">'+xs[1]+'</span></div>'+
-    '<div class="pbar"><b style="width:'+(pr||0)+'%"></b></div>'+
-    '<div class="meta"><span>'+(pr!=null?pr+' %':'–')+'</span><span>Lager '+esc(v(x,'bambu_print_layers')||'–')+'</span><span>Kvar '+esc(rem||'–')+'</span></div>'+
-    '<div class="meta"><span>Munstycke '+num(v(x,'measure_temperature.nozzle'),0)+'°</span><span>Bädd '+num(v(x,'measure_temperature.bed'),0)+'°</span><span>Kammare '+num(v(x,'measure_temperature.chamber'),0)+'°</span><span>'+num(v(D.x2dPlug,'measure_power'),0)+' W</span></div>'+
-    '<button class="mode'+(lc?' on':'')+'" data-act="onoff" data-id="'+x+'" data-cap="onoff.light_chamber" style="border:0;padding-bottom:0"><span>Kammarlampa</span><span class="switch"></span></button></div>';
+  h += printerBlock({nm:'Bambu X2D', st:xs, run:xRun, pct:pr, layers:String(v(x,'bambu_print_layers')||'').replace(/\s*\/\s*/,' / '), remMin:remMinutes(rem),
+    temps:[['Munstycke',num(v(x,'measure_temperature.nozzle'),0)],['Bädd',num(v(x,'measure_temperature.bed'),0)],['Kammare',num(v(x,'measure_temperature.chamber'),0)]],
+    w:num(v(D.x2dPlug,'measure_power'),0), lamp:{on:!!v(x,'onoff.light_chamber'), id:x}});
   var u = D.u1, us = String(v(u,'printer_status')||''), up = v(u,'printer_job_progress')||0, eta = v(u,'printer_job_eta')||0;
   if(up>0 && up<=1) up = up*100;
   var map = {printing:['run','Skriver'], paused:['','Pausad'], idle:['','Ledig'], standby:['','Ledig'], ready:['','Ledig'], complete:['done','Klar'], completed:['done','Klar'], finished:['done','Klar'], error:['','Fel'], disconnected:['off','Frånkopplad']};
-  var s2 = map[us.toLowerCase()] || ['', us||'–'], uRun = s2[1]==='Skriver';
-  h += '<div class="printer"><div class="row1"><span class="nm">Snapmaker U1</span><span class="stat '+s2[0]+'">'+esc(s2[1])+'</span></div>'+
-    (uRun ? '<div class="pbar"><b style="width:'+up+'%"></b></div><div class="meta"><span>'+num(up,0)+' %</span><span>'+esc(v(u,'printer_job_name')||'')+'</span>'+(eta>0?'<span>Kvar '+fmtMin(eta/60)+'</span>':'')+'</div>' : '')+
-    '<div class="meta"><span>Hotend '+num(v(u,'printer_hotend_temperature'),0)+'°</span><span>Bädd '+num(v(u,'printer_bed_temperature'),0)+'°</span><span>Kammare '+num(v(u,'measure_temperature.temperature_sensor_cavity'),0)+'°</span><span>'+num(v(D.u1Plug,'measure_power'),0)+' W</span></div></div>';
+  var s2 = map[us.toLowerCase()] || ['', us||'–'];
+  h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:'', remMin:eta>0?eta/60:null,
+    temps:[['Hotend',num(v(u,'printer_hotend_temperature'),0)],['Bädd',num(v(u,'printer_bed_temperature'),0)],['Kammare',num(v(u,'measure_temperature.temperature_sensor_cavity'),0)]],
+    w:num(v(D.u1Plug,'measure_power'),0)});
   $('printers').innerHTML = h;
 }
 function renderSonos(){
