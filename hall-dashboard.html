@@ -1105,7 +1105,7 @@ function fitFeed(el){
 }
 /* Nyhetslistan glider sakta uppåt hela tiden (som en eftertext). Drar man i den med fingret
    följer listan med och den automatiska rullningen pausas i 30 s. */
-var NEWS_SPEED = 12;   // pixlar per sekund
+var NEWS_SPEED = 7;    // pixlar per sekund
 var nOff = 0, nLoop = 0, nLast = 0, nDrag = null, nMoved = false;
 function nApply(){ var f = newsFeed(); if(!f || !f.firstChild) return;
   if(nLoop){ nOff = ((nOff % nLoop) + nLoop) % nLoop; } else nOff = 0;
