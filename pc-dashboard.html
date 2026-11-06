@@ -338,6 +338,43 @@ body{background:
 .hw b.hot{color:var(--coral)}
 .hw svg{position:absolute;left:0;bottom:0;width:100%;height:60%}
 .hw .off{grid-column:1/-1;color:var(--muted);font-size:.8rem;padding:.6rem .7rem;background:none;box-shadow:none}
+
+/* === 7-tums pekskärm: stora tryckytor (minst ca 48 px) och kompakt bil === */
+button,.chip,.sp-dev,.vol{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.btn{min-height:3rem;padding:.6rem 1.15rem;font-size:.95rem;gap:.5rem}
+.btn svg{width:1.3rem;height:1.3rem}
+.btn:active,.rbtn:active,.sp-dev:active,.iconbtn:active,.chip.tap:active{transform:scale(.95)}
+.rbtn{width:3rem;height:3rem}
+.rbtn svg{width:1.4rem;height:1.4rem}
+.rbtn.sp-play{width:3.5rem;height:3.5rem}
+.seg{gap:.6rem}
+.iconbtn{width:3rem;height:3rem}
+.sp-devs{gap:.55rem}
+.sp-dev{min-height:2.9rem;padding:.55rem 1rem;font-size:.9rem}
+.chip.tap{min-height:2.6rem;padding:.4rem .9rem}
+.mode{min-height:3rem}
+.switch{width:3.4rem;height:1.95rem}
+.switch::after{top:.22rem;left:.22rem;width:1.5rem;height:1.5rem}
+.on .switch::after{transform:translateX(1.45rem)}
+.sheet .acts .btn{min-height:3.2rem;padding:.6rem 1.3rem}
+.field input{min-height:3rem}
+/* Volym: hög tryckyta, smal synlig bana, stort handtag */
+.vol{height:2.6rem;margin-top:.3rem;background:transparent}
+.vol::-webkit-slider-runnable-track{height:.4rem;border-radius:99px;background:rgba(255,255,255,.1)}
+.vol::-webkit-slider-thumb{width:1.7rem;height:1.7rem;margin-top:-.65rem;box-shadow:0 0 .5rem rgba(0,0,0,.5)}
+/* Kompakt EV6-kort */
+.car .head{margin-bottom:.5rem}
+.car-row{gap:.8rem}
+.ring{width:4.6rem;height:4.6rem}
+.ring b{font-size:1.2rem}
+.ring small{font-size:.62rem}
+.car-info{gap:.15rem;font-size:.82rem;min-width:0}
+.car-info .range{font-size:1.25rem}
+.car-info .sub{font-size:.78rem}
+.car-age{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car-img{flex:none;width:5.6rem;display:flex;align-items:center}
+.car-img img{width:100%;height:auto;filter:drop-shadow(0 .3rem .4rem rgba(0,0,0,.45))}
+.car-btns{margin-top:.7rem}
 </style>
 </head>
 <body>
@@ -771,9 +808,8 @@ function renderCar(){
   if(lu) am = Math.max(0, Math.round((Date.now()-lu)/60000));
   $('car').innerHTML =
     '<div class="head"><h2>'+icon('car')+'EV6</h2>'+
-      (v(c,'locked')===false ? '<span class="chip warn" data-act="carlock" style="padding:.25rem .6rem;cursor:pointer">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
+      (v(c,'locked')===false ? '<span class="chip warn tap" data-act="carlock" style="cursor:pointer">'+icon('unlock')+'Olåst</span>' : '<span class="chip ok" style="padding:.25rem .6rem">'+icon('lock')+'Låst</span>')+
     '</div>'+
-    '<div class="car-hero"><img src="'+CAR_IMG+'" alt="EV6"></div>'+
     '<div class="car-row">'+
       '<div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" stroke="#262c37"/><circle cx="50" cy="50" r="42" stroke="'+col+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" style="transition:stroke-dashoffset .6s"/></svg>'+
         '<div class="lbl"><div><b>'+num(b,0)+'%</b><small>batteri</small></div></div></div>'+
@@ -781,12 +817,12 @@ function renderCar(){
         '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span></div>'+
         '<div class="sub" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+icon('bolt').replace('<svg>','<svg style="width:.9rem;height:.9rem;vertical-align:-2px">')+' '+status+'</div>'+
         '<div class="sub">Avgång '+svDate(v(c,'departure_time'))+'</div>'+
-        '<div class="sub" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr)))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
+        '<div class="sub car-age" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr)))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
       '</div>'+
+      '<div class="car-img"><img src="'+CAR_IMG+'" alt="EV6"></div>'+
     '</div>'+
     '<div class="car-btns">'+
       '<button class="btn'+(clim?' active':'')+'" data-act="climate">'+icon('fire')+(clim?'Förvärmer':'Förvärm')+'</button>'+
-      '<button class="btn'+(force?' active':'')+'" data-act="force">'+icon('bolt')+'Tvångsladda</button>'+
     '</div>';
 }
 
@@ -1144,7 +1180,7 @@ document.addEventListener('change', function(e){ if(e.target.id==='spVol'){ spCm
 function renderSpotify(){
   var el = $('spotify'); if(!el) return;
   var ae = document.activeElement; if(ae && ae.id==='spVol') return;
-  var head = '<div class="head" style="margin-bottom:.6rem"><h2>'+icon('music')+'Spotify</h2>'+(SP.refresh ? '<button class="rbtn" data-act="spsetup" title="Inställningar" style="width:2rem;height:2rem">'+icon('gear')+'</button>' : '')+'</div>';
+  var head = '<div class="head" style="margin-bottom:.6rem"><h2>'+icon('music')+'Spotify</h2>'+(SP.refresh ? '<button class="rbtn" data-act="spsetup" title="Inställningar">'+icon('gear')+'</button>' : '')+'</div>';
   if(!SP.refresh){
     el.innerHTML = head+'<div class="sub" style="margin-bottom:.9rem">Styr Spotify och välj var musiken ska spelas.</div><button class="btn primary" data-act="spsetup">Anslut Spotify</button>';
     return;
