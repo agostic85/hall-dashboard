@@ -401,6 +401,14 @@ button,.chip,.sp-dev,.vol{touch-action:manipulation;-webkit-tap-highlight-color:
 header{display:none}
 .off-chip{display:none;position:fixed;left:50%;bottom:.8rem;transform:translateX(-50%);z-index:15}
 body.offline .off-chip{display:inline-flex}
+/* === Spotify kompakt: bara knappar + ljudutgång === */
+#spotify{flex:none!important}
+#printers{flex:1}
+.sp-head{margin-bottom:.3rem}
+.sp-ctl2{display:flex;align-items:center;gap:.45rem}
+.sp-ctl2 .rbtn.sp-play{width:3.3rem;height:3.3rem}
+.sp-ctl2 .sp-gear{margin-left:.35rem;opacity:.7}
+#spotify .sp-lbl{margin-top:.5rem}
 </style>
 </head>
 <body>
@@ -434,6 +442,7 @@ body.offline .off-chip{display:inline-flex}
     <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/></symbol>
     <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+    <symbol id="i-headset" viewBox="0 0 24 24"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/></symbol>
     <symbol id="i-speaker" viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><circle cx="12" cy="15" r="3"/><path d="M12 6h.01"/></symbol>
     <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
     <symbol id="i-tv" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8"/></symbol>
@@ -589,6 +598,11 @@ CONFIG = {
   speakers: [
     {name:'Sonos Vardagsrum', id:'8f3767bb-63d6-4669-8d1b-8854434400de'},
     {name:'Sonos Badrum',     id:'5a5ee041-58be-4c6e-84b6-c9f15befe89a'}
+  ],
+  /* Datorns ljudutgångar – växlas via ljudvaxlare.ps1 på Monstret (match = del av enhetsnamnet i Windows) */
+  audioOutputs: [
+    {name:'Högtalare', match:'EDIFIER', icon:'speaker'},
+    {name:'Headset',   match:'AceZone', icon:'headset'}
   ],
   /* Sonos-favorit som startas via Homey när högtalaren inte syns i Spotify */
   sonosFavorite: {id:'2', name:'Caliente', description:'Spotify', image:'https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da84a49dfeea4df25d0563d7a1ce'}
@@ -1214,34 +1228,36 @@ function spCmd(method, path, body){ spApi(method, path, body).then(function(){ s
 function devIcon(t){ t = String(t||'').toLowerCase(); return t==='computer' ? 'pc' : t==='smartphone' ? 'phone' : (t==='tv'||t==='castvideo') ? 'tv' : 'speaker'; }
 window.addEventListener('message', function(e){ var d = e.data; if(d && d.type==='spotify-code' && SP.state && d.state===SP.state) spFinish(d.code); });
 document.addEventListener('change', function(e){ if(e.target.id==='spVol'){ spCmd('PUT','/me/player/volume?volume_percent='+e.target.value); e.target.blur(); } });
+/* Datorns ljudutgång via lokal hjälpare (ljudvaxlare.ps1) */
+var AUD_URL = 'http://localhost:8091', AUD = {ok:false, def:''};
+function audState(j){ AUD.ok = true; AUD.def = String(j && j.default || ''); renderSpotify(); }
+function audPoll(){ fetch(AUD_URL+'/audio', {cache:'no-store'}).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(audState).catch(function(){ if(AUD.ok){ AUD.ok = false; renderSpotify(); } }); }
+function spPcDev(){ return spDevs.filter(function(d){ return /computer/i.test(d.type); })[0]; }
+function setAudio(i){
+  var o = CONFIG.audioOutputs[i];
+  fetch(AUD_URL+'/audio/set?match='+encodeURIComponent(o.match), {cache:'no-store'})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+    .then(function(j){ audState(j); toast('Ljud: '+o.name); })
+    .catch(function(){ toast('Ljudväxlaren svarar inte på Monstret'); });
+  /* spelar Spotify någon annanstans (t.ex. Sonos) – flytta tillbaka till datorn */
+  var pc = spPcDev(), act = spState && spState.device;
+  if(SP.refresh && pc && act && act.id !== pc.id) spCmd('PUT','/me/player', {device_ids:[pc.id], play:!!spState.is_playing});
+}
 function renderSpotify(){
   var el = $('spotify'); if(!el) return;
-  var ae = document.activeElement; if(ae && ae.id==='spVol') return;
-  var head = '<div class="head" style="margin-bottom:.6rem"><h2>'+icon('music')+'Spotify</h2>'+(SP.refresh ? '<button class="rbtn" data-act="spsetup" title="Inställningar">'+icon('gear')+'</button>' : '')+'</div>';
-  if(!SP.refresh){
-    el.innerHTML = head+'<div class="sub" style="margin-bottom:.9rem">Styr Spotify och välj var musiken ska spelas.</div><button class="btn primary" data-act="spsetup">Anslut Spotify</button>';
-    return;
-  }
-  var s = spState, it = s && s.item, dev = s && s.device, playing = !!(s && s.is_playing);
-  var imgs = it && it.album && it.album.images || [], img = imgs.length ? imgs[Math.min(1, imgs.length-1)].url : '';
-  var pct = it && it.duration_ms ? Math.min(100, (s.progress_ms||0)/it.duration_ms*100) : 0;
-  var vol = dev && dev.volume_percent!=null ? dev.volume_percent : 50, canVol = !!dev && dev.supports_volume!==false;
-  var matched = {}, spk = CONFIG.speakers.map(function(x){ var d = spSpeakerDev(x); if(d) matched[d.id] = 1; return {s:x, d:d}; });
-  function devBtn(d){ return '<button class="sp-dev'+(d.is_active?' on':'')+'" data-act="spdev" data-id="'+esc(d.id)+'">'+icon(devIcon(d.type))+'<span>'+esc(d.name)+'</span></button>'; }
-  var h = head+
-    '<div class="sp-now">'+(img ? '<img src="'+esc(img)+'" alt="">' : '<div class="sp-ph">'+icon('music')+'</div>')+
-    '<div class="info"><b>'+(it ? esc(it.name) : 'Inget spelas')+'</b><span>'+(it ? esc((it.artists||[]).map(function(a){ return a.name; }).join(', ')) : (spErr ? 'Fel: '+esc(spErr) : 'Välj en enhet nedan'))+'</span>'+
-    (dev ? '<span style="color:#1ed760">'+icon(devIcon(dev.type)).replace('<svg>','<svg style="width:.85rem;height:.85rem;vertical-align:-2px">')+' '+esc(dev.name)+'</span>' : '')+'</div></div>'+
-    '<div class="sp-prog"><b style="width:'+pct+'%"></b></div>'+
-    '<div class="sp-ctl"><button class="rbtn" data-act="spprev">'+icon('prev')+'</button>'+
-    '<button class="rbtn sp-play'+(playing?' on':'')+'" data-act="spplay">'+icon(playing?'pause':'play')+'</button>'+
-    '<button class="rbtn" data-act="spnext">'+icon('next')+'</button>'+
-    '<input type="range" class="vol" id="spVol" min="0" max="100" value="'+vol+'"'+(canVol?'':' disabled')+' title="Volym"></div>'+
-    '<div class="sp-lbl">Spela på</div><div class="sp-devs">'+
-    spDevs.filter(function(d){ return !matched[d.id]; }).map(devBtn).join('')+
-    spk.map(function(k){ return k.d ? devBtn(k.d) : '<button class="sp-dev cold" data-act="spsonos" data-id="'+k.s.id+'" title="Syns inte i Spotify just nu – startar Sonos-favoriten '+esc(CONFIG.sonosFavorite.name)+'">'+icon('speaker')+'<span>'+esc(k.s.name)+'</span></button>'; }).join('')+
-    '<button class="sp-dev" data-act="sprefresh" title="Uppdatera listan">↻</button></div>';
-  el.innerHTML = h;
+  var s = spState, act = s && s.device, playing = !!(s && s.is_playing), onPc = !act || /computer/i.test(act.type);
+  var outs = CONFIG.audioOutputs.map(function(o, i){
+    var on = AUD.ok && onPc && AUD.def.toLowerCase().indexOf(o.match.toLowerCase()) >= 0;
+    return '<button class="sp-dev'+(on?' on':'')+(AUD.ok?'':' cold')+'" data-act="audout" data-i="'+i+'"'+(AUD.ok?'':' title="Ljudväxlaren körs inte på Monstret"')+'>'+icon(o.icon)+'<span>'+esc(o.name)+'</span></button>';
+  }).join('');
+  var ctl = SP.refresh ?
+    '<div class="sp-ctl2"><button class="rbtn" data-act="spprev" title="Föregående">'+icon('prev')+'</button>'+
+    '<button class="rbtn sp-play'+(playing?' on':'')+'" data-act="spplay" title="Spela/pausa">'+icon(playing?'pause':'play')+'</button>'+
+    '<button class="rbtn" data-act="spnext" title="Nästa">'+icon('next')+'</button>'+
+    '<button class="rbtn sp-gear" data-act="spsetup" title="Inställningar">'+icon('gear')+'</button></div>'
+    : '<button class="btn primary" data-act="spsetup">Anslut</button>';
+  el.innerHTML = '<div class="head sp-head"><h2>'+icon('music')+'Spotify</h2>'+ctl+'</div>'+
+    '<div class="sp-lbl">Ljudutgång</div><div class="sp-devs">'+outs+'</div>';
 }
 
 /* ===================== Interaktion ===================== */
@@ -1323,6 +1339,7 @@ document.addEventListener('click', function(e){
     case 'spnext': spCmd('POST','/me/player/next'); break;
     case 'spdev': spCmd('PUT','/me/player', {device_ids:[t.dataset.id], play:true}); toast('Byter enhet…'); break;
     case 'spsonos': sonosFavorite(t.dataset.id); break;
+    case 'audout': setAudio(+t.dataset.i); break;
     case 'sprefresh': spDevices(); spPoll(); break;
     case 'dimclose': closeDim(); break;
     case 'setclose': $('setScrim').classList.remove('show'); break;
@@ -1392,6 +1409,7 @@ renderClock(); setInterval(renderClock, 10000);
 setInterval(function(){ var r = function(){ return Math.round(Math.random()*6-3); }; document.querySelector('.app').style.transform = 'translate('+r()+'px,'+r()+'px)'; }, 3*60*1000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
 hwPoll(); setInterval(hwPoll, 2000);
+audPoll(); setInterval(audPoll, 5000);
 spPoll(); setInterval(spPoll, 5000); spDevices(); setInterval(spDevices, 30000);
 
 /* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
