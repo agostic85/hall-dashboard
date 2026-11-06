@@ -315,10 +315,10 @@ html{background:#0d1015}
 .nw-h b{font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .nw-row.on .nw-h b{font-weight:600}
 .nw-s{display:-webkit-box;font-size:.76rem;color:var(--muted);margin-top:.15rem;line-height:1.35;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.nw-feed{position:relative;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-y;
-  -webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}
-.nw-feed::-webkit-scrollbar{display:none}
-.nw-feed::after{content:"";display:block;height:2rem}
+.nw-feed{position:relative;overflow:hidden;touch-action:none;cursor:grab;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 13%,#000 84%,transparent);mask-image:linear-gradient(transparent 0,#000 13%,#000 84%,transparent)}
+.nw-track{will-change:transform}
+.nw-gap{height:1.4rem}
 .tag{display:inline-block;font-size:.6rem;font-weight:600;letter-spacing:.04em;padding:.06rem .4rem;border-radius:99px;margin-right:.4rem;vertical-align:.08rem}
 .tag.p4{background:rgba(90,169,255,.16);color:var(--blue)} .tag.ekot{background:rgba(167,139,250,.16);color:var(--violet)}
 .legend{display:flex;gap:.2rem;align-items:center}
@@ -1030,7 +1030,7 @@ function newsApply(list){
 /* ta bort "NY" när tiden gått ut, utan att rendera om listan */
 function newsTagsTick(){
   var f = newsFeed(); if(!f || !news) return;
-  [].forEach.call(f.children, function(r){
+  [].forEach.call(f.querySelectorAll('.nw-row'), function(r){
     var x = news[+r.dataset.i]; if(!x || isFresh(x)) return;
     r.classList.remove('fresh'); var t = r.querySelector('.tag.ny'); if(t) t.remove();
   });
@@ -1060,12 +1060,17 @@ function renderNews(){
   var el = $('news'); if(!el) return;
   var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4 JÄMTLAND</span><span class="tag ekot">EKOT</span></span></div>';
   if(!news){ el.innerHTML = head + '<div class="sub">'+(newsErr||'Hämtar nyheter…')+'</div>'; return; }
-  el.innerHTML = head + '<div class="feed nw-feed">' + news.map(function(x,i){
+  var rows = news.map(function(x,i){
     var nw = isFresh(x);
-    return '<div class="nw-row'+(i===0?' on':'')+(nw?' fresh':'')+'" data-act="news" data-i="'+i+'"><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b>'+(nw?'<span class="tag ny">NY</span>':'')+'<span class="tag '+x.k+'">'+(x.k==='p4'?'P4':'EKOT')+'</span>'+esc(x.t)+'</b>'+
+    return '<div class="nw-row'+(nw?' fresh':'')+'" data-act="news" data-i="'+i+'"><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b>'+(nw?'<span class="tag ny">NY</span>':'')+'<span class="tag '+x.k+'">'+(x.k==='p4'?'P4':'EKOT')+'</span>'+esc(x.t)+'</b>'+
       (x.s ? '<div class="nw-s">'+esc(x.s)+'</div>' : '')+'</div></div>';
-  }).join('') + '</div>';
-  newsIdx = 0; newsWire(el.querySelector('.nw-feed'));
+  }).join('');
+  el.innerHTML = head + '<div class="feed nw-feed"><div class="nw-track">' + rows + '<div class="nw-gap"></div></div></div>';
+  var f = el.querySelector('.nw-feed'), tr = f.firstChild;
+  nOff = 0; nLoop = 0;
+  if(tr.offsetHeight > f.clientHeight + 4){ nLoop = tr.offsetHeight; tr.innerHTML += tr.innerHTML; }   /* dubbla listan = sömlös loop */
+  tr.style.transform = 'translate3d(0,0,0)';
+  newsWire(f);
 }
 /* Popup med hela nyheten (texten finns i SR:s flöde – ingen extern sida behöver öppnas) */
 function richText(html){
@@ -1098,36 +1103,40 @@ function fitFeed(el){
   for(i=0;i<rows.length;i++){ if(rows[i].offsetTop - f.offsetTop + rows[i].offsetHeight > max + 1 && i>0){ rows[i].style.display = 'none'; } else n = i+1; }
   return n;
 }
-/* Nyhetslistan rullar automatiskt en nyhet i taget. Sveper man själv pausas rullningen i 30 s. */
-var newsIdx = 0, newsHold = 0, newsProg = 0;
-function newsFeed(){ var el = $('news'); return el && el.querySelector('.nw-feed'); }
-function newsMark(f){ for(var i=0;i<f.children.length;i++) f.children[i].classList.toggle('on', i===newsIdx); }
-function newsGo(i, smooth){
-  var f = newsFeed(); if(!f || !f.children[i]) return;
-  newsIdx = i; newsProg = Date.now(); newsMark(f);
-  if(f.scrollTo) f.scrollTo({top:f.children[i].offsetTop, behavior:smooth?'smooth':'auto'}); else f.scrollTop = f.children[i].offsetTop;
+/* Nyhetslistan glider sakta uppåt hela tiden (som en eftertext). Drar man i den med fingret
+   följer listan med och den automatiska rullningen pausas i 30 s. */
+var NEWS_SPEED = 12;   // pixlar per sekund
+var nOff = 0, nLoop = 0, nLast = 0, nDrag = null, nMoved = false;
+function nApply(){ var f = newsFeed(); if(!f || !f.firstChild) return;
+  if(nLoop){ nOff = ((nOff % nLoop) + nLoop) % nLoop; } else nOff = 0;
+  f.firstChild.style.transform = 'translate3d(0,'+(-nOff).toFixed(2)+'px,0)'; }
+function nFrame(t){
+  requestAnimationFrame(nFrame);
+  var dt = nLast ? Math.min(.1, (t - nLast)/1000) : 0; nLast = t;
+  if(!news || nDrag || newsOpen>=0 || document.hidden || Date.now() < newsHold) return;
+  if(newsPending){ news = newsPending; newsPending = null; renderNews(); newsStay = Date.now() + 25000; return; }   /* nya nyheter som väntat */
+  if(Date.now() < newsStay || !nLoop) return;
+  nOff += NEWS_SPEED*dt; nApply();
 }
+requestAnimationFrame(nFrame);
+setInterval(newsTagsTick, 60000);
+var newsHold = 0;
+function newsFeed(){ var el = $('news'); return el && el.querySelector('.nw-feed'); }
 function newsWire(f){
   if(!f) return;
   var hold = function(){ newsHold = Date.now() + 30000; };
-  f.addEventListener('touchstart', hold, {passive:true});
-  f.addEventListener('pointerdown', hold);
-  f.addEventListener('wheel', hold, {passive:true});
-  f.addEventListener('scroll', function(){
-    if(Date.now() - newsProg < 1500) return;            /* vår egen automatiska rullning */
-    hold(); var best = 0;
-    for(var i=0;i<f.children.length;i++){ if(f.children[i].offsetTop <= f.scrollTop + 8) best = i; }
-    if(best !== newsIdx){ newsIdx = best; newsMark(f); }
-  }, {passive:true});
+  f.addEventListener('pointerdown', function(e){ hold(); nDrag = {y:e.clientY, o:nOff}; nMoved = false; });
+  f.addEventListener('pointermove', function(e){
+    if(!nDrag) return; var dy = e.clientY - nDrag.y;
+    if(Math.abs(dy) > 6) nMoved = true;
+    if(nMoved){ nOff = nDrag.o - dy; nApply(); hold(); }
+  });
+  var end = function(){ if(nDrag){ nDrag = null; hold(); } };
+  f.addEventListener('pointerup', end); f.addEventListener('pointercancel', end); f.addEventListener('pointerleave', end);
+  f.addEventListener('wheel', function(e){ hold(); nOff += e.deltaY; nApply(); e.preventDefault(); }, {passive:false});
+  /* ett drag ska inte räknas som tryck på en nyhet */
+  f.addEventListener('click', function(e){ if(nMoved){ e.stopPropagation(); e.preventDefault(); nMoved = false; } }, true);
 }
-setInterval(function(){
-  var f = newsFeed(); if(!f || newsOpen>=0 || document.hidden || Date.now() < newsHold) return;
-  if(newsPending){ news = newsPending; newsPending = null; renderNews(); newsStay = Date.now() + 25000; return; }   /* nya nyheter som väntat */
-  if(Date.now() < newsStay) return;
-  newsTagsTick();
-  var atEnd = f.scrollTop + f.clientHeight >= f.scrollHeight - 4 || newsIdx >= f.children.length - 1;
-  newsGo(atEnd ? 0 : newsIdx + 1, true);
-}, 7000);
 
 /* ===================== Polisen – händelser i Jämtland ===================== */
 var police = null, policeErr = '';
