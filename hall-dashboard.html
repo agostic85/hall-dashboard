@@ -1179,11 +1179,16 @@ function newsWire(f){
 
 /* ===================== Polisen – händelser i Jämtland ===================== */
 var police = null, policeErr = '';
+/* Polisens tider kan sakna inledande nolla i timmen ("2026-11-08 7:08:17 +01:00") – fyll på så att datumet går att tolka */
+function poDate(v){
+  var m = /^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}):(\d{2}):(\d{2})\s*([+-]\d{2}:?\d{2})?/.exec(String(v||''));
+  return m ? new Date(m[1]+'T'+('0'+m[2]).slice(-2)+':'+m[3]+':'+m[4]+(m[5]||'')) : new Date(NaN);
+}
 function loadPolice(){
   fetch('https://polisen.se/api/events?locationname='+encodeURIComponent('Östersund;Jämtlands län'), {cache:'no-store'})
     .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(a){
-      police = a.map(function(x){ return {d:new Date(String(x.datetime).replace(' ','T').replace(' ','')), ty:x.type, pl:(x.location||{}).name||'', s:x.summary||''}; })
+      police = a.map(function(x){ return {d:poDate(x.datetime), ty:x.type, pl:(x.location||{}).name||'', s:x.summary||''}; })
         .filter(function(x){ return !isNaN(x.d); }).sort(function(p,q){ return q.d - p.d; }).slice(0, 8);
       policeErr = ''; renderPolice();
     }).catch(function(e){ policeErr = e.message; renderPolice(); });
@@ -1425,7 +1430,12 @@ loadFc(); setInterval(loadFc, 30*60*1000);
 loadDayInfo(); setInterval(loadDayInfo, 30*60*1000);
 loadNews(); setInterval(loadNews, 2*60*1000);   /* nyheter: var 2:a minut */
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) loadNews(); });
-loadPolice(); setInterval(loadPolice, 10*60*1000);
+/* Polisens regler: minst 10 s mellan anrop, högst 60 per timme och 1440 per dygn. Var 2:a minut när sidan syns
+   ger marginal även om både plattan och mobilen har dashboarden öppen samtidigt. */
+var POLICE_MS = 2*60*1000, policeAt = 0;
+function policeTick(){ if(document.hidden || Date.now() - policeAt < POLICE_MS - 5000) return; policeAt = Date.now(); loadPolice(); }
+policeTick(); setInterval(policeTick, 15000);
+document.addEventListener('visibilitychange', policeTick);
 loadWarn(); setInterval(loadWarn, 15*60*1000);
 window.addEventListener('resize', function(){ renderNews(); renderPolice(); });
 
