@@ -1172,7 +1172,7 @@ function renderPrinters(){
   var h = '<div class="head" style="margin-bottom:.2rem"><h2>'+icon('printer')+'3D-skrivare</h2></div>';
   h += printerBlock({nm:'Bambu X2D', st:xs, run:xRun, pct:pr, layers:String(v(x,'bambu_print_layers')||'').replace(/\s*\/\s*/,' / '), remMin:remMinutes(rem),
     temps:[['Munstycke',num(v(x,'measure_temperature.nozzle'),0)],['Bädd',num(v(x,'measure_temperature.bed'),0)],['Kammare',num(v(x,'measure_temperature.chamber'),0)]],
-    w:num(v(D.x2dPlug,'measure_power'),0), power:{on:!!v(D.x2dPlug,'onoff'), id:D.x2dPlug, ic:'x2d'}, lamp:{on:!!v(x,'onoff.light_chamber'), id:x}});
+    w:num(v(D.x2dPlug,'measure_power'),0), power:{on:!!v(D.x2dPlug,'onoff'), id:D.x2dPlug, ic:'x2d'}});
   var u = D.u1, us = String(v(u,'printer_status')||''), up = v(u,'printer_job_progress')||0, eta = v(u,'printer_job_eta')||0;
   if(up>0 && up<=1) up = up*100;
   var map = {printing:['run','Skriver'], paused:['','Pausad'], idle:['','Ledig'], standby:['','Ledig'], ready:['','Ledig'], complete:['done','Klar'], completed:['done','Klar'], finished:['done','Klar'], error:['','Fel'], disconnected:['off','Frånkopplad']};
