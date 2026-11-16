@@ -338,7 +338,14 @@ body{background:
 .scenes{display:flex;gap:.4rem;flex:none}
 .scenes .btn{padding:.6rem .85rem}
 .lights .head h2{white-space:nowrap}
-.btn.scene.cur{background:linear-gradient(160deg,#0e3b3d,#0a2628);border-color:transparent;color:var(--teal)}
+.btn.scene.cur{background:linear-gradient(135deg,var(--pink),var(--cyan));border-color:transparent;color:#120612;box-shadow:0 0 1rem rgba(255,79,163,.35)}
+/* Mindre lamprutor */
+.tiles3,.tiles4{grid-auto-rows:5.1rem;gap:.5rem}
+.tiles3 .tile,.tiles4 .tile{padding:.55rem .75rem}
+.tiles3 .tile .ic,.tiles4 .tile .ic{width:1.8rem;height:1.8rem}
+.tiles3 .tile .ic svg,.tiles4 .tile .ic svg{width:1rem;height:1rem}
+.tiles3 .nm,.tiles4 .nm{font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tiles3 .tile .st,.tiles4 .tile .st{font-size:.78rem;margin-top:.05rem}
 .cbtn.cur{background:linear-gradient(160deg,#0e3b3d,#0a2628);color:var(--teal)}
 .cbtn:active,.rbtn:active{transform:scale(.95)}
 .dim{background:linear-gradient(90deg,#2a1430,var(--pink))}
@@ -1134,13 +1141,14 @@ var SCENES = {
     'cca492c8-f5ac-46fe-b275-c9db3cfd7c58': {dim:.12, temp:.95},
     'f2f8de16-8965-47cb-be65-c27a38a19df3': {dim:.2,  hue:.08, sat:.85},
     '2dcac41c-ab20-4e31-9914-5489b739c08a': {dim:1,   hue:.69, sat:1},
-    '3832acad-a116-4f00-8683-8f1c12d4e3d9': {dim:1,   hue:.83, sat:1},
+    '3832acad-a116-4f00-8683-8f1c12d4e3d9': {dim:1,   hue:.75, sat:1},
     '3bb0b5d4-3f77-41b8-b2a5-da3e468ba7e5': {dim:1,   hue:.58, sat:1},
     '5d4ba947-1c4b-4e66-ba5f-624247bde98a': {dim:.3,  hue:.76, sat:.9}
   }
 };
 function applyScene(name){
   var sc = SCENES[name]; if(!sc) return;
+  try{ localStorage.setItem('pcDash.scene', name); }catch(e){}
   Object.keys(sc).forEach(function(id, i){
     var L = sc[id];
     setTimeout(function(){              // lite luft mellan lamporna så Hue-bryggan hinner med
@@ -1152,12 +1160,15 @@ function applyScene(name){
   toast(name==='lounge' ? 'Lounge-läge' : 'Arbetsljus');
 }
 function currentScene(){
+  var sel = null; try{ sel = localStorage.getItem('pcDash.scene'); }catch(e){}
+  var anyOn = Object.keys(SCENES.arbete).some(function(id){ return !!v(id,'onoff'); });
+  if(!anyOn) return null;
   for(var n in SCENES){
     var sc = SCENES[n], ok = true;
     for(var id in sc){ if(!v(id,'onoff') || Math.abs((v(id,'dim')||0)-sc[id].dim) > .03){ ok=false; break; } }
     if(ok) return n;
   }
-  return null;
+  return SCENES[sel] ? sel : null;   // ljuset justerat för hand: visa senast valda läge
 }
 function renderScenes(){
   var cur = currentScene();
