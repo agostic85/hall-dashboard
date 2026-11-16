@@ -334,6 +334,9 @@ body{background:
 .pwr-ic.on{border-color:transparent;background:linear-gradient(#15181e,#15181e) padding-box,linear-gradient(135deg,var(--pink),var(--cyan)) border-box;box-shadow:0 0 1.1rem rgba(255,79,163,.3)}
 .pwr-ic.on svg{filter:none;opacity:1}
 .pwr-ic:active{transform:scale(.94)}
+.cbtn{height:3rem;padding:0 1.05rem 0 .75rem;border-radius:99px;display:inline-flex;align-items:center;gap:.4rem;font-size:1rem;font-weight:600;color:var(--text);background:linear-gradient(160deg,#232833,#1c2029);border:1px solid transparent}
+.cbtn.cur{background:linear-gradient(160deg,#0e3b3d,#0a2628);color:var(--teal)}
+.cbtn:active,.rbtn:active{transform:scale(.95)}
 .dim{background:linear-gradient(90deg,#2a1430,var(--pink))}
 /* === Datorn: CPU/GPU från LibreHardwareMonitor === */
 .hw{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
@@ -410,6 +413,12 @@ button,.chip,.sp-dev,.vol{touch-action:manipulation;-webkit-tap-highlight-color:
 header{display:none}
 .off-chip{display:none;position:fixed;left:50%;bottom:.8rem;transform:translateX(-50%);z-index:15}
 body.offline .off-chip{display:inline-flex}
+/* Uppdatera-knapp nere till vänster (rubrikraden är dold) */
+#reload{position:fixed;left:1.5rem;bottom:1.5rem;z-index:14;opacity:.55;transition:opacity .2s}
+#reload:hover{opacity:1}
+#reload.spin{opacity:1}
+#reload.spin svg{animation:rlspin .8s linear infinite}
+@keyframes rlspin{to{transform:rotate(360deg)}}
 /* === Spotify kompakt: bara knappar + ljudutgång === */
 #spotify{flex:none!important}
 #printers{flex:1}
@@ -460,6 +469,7 @@ body.offline .off-chip{display:inline-flex}
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
     <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 5v14L8 12zM6 5v14"/></symbol>
     <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5v14l10-7zM18 5v14"/></symbol>
+    <symbol id="i-reload" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16"/><path d="M20 21v-5h-5"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
     <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1"/></symbol>
@@ -483,6 +493,7 @@ body.offline .off-chip{display:inline-flex}
     <button class="iconbtn" id="gear" aria-label="Inställningar"><svg><use href="#i-gear"/></svg></button>
   </header>
   <div class="chip bad off-chip" id="offChip"></div>
+  <button class="iconbtn" id="reload" aria-label="Uppdatera dashboarden" title="Uppdatera"><svg><use href="#i-reload"/></svg></button>
 
   <main>
     <section class="col col-left">
@@ -1114,10 +1125,10 @@ function renderLightGroups(){
 function renderCurtain(){
   var c = D.curtain, closed = v(c,'windowcoverings_closed'), b = v(c,'measure_battery');
   $('curtain').innerHTML = '<span class="ai">'+icon('curtain')+'</span>'+
-    '<div class="txt"><b>Gardin</b><div class="sub">'+(closed===true?'Nere':closed===false?'Uppe':'–')+(b!=null?' · batteri '+num(b,0)+' %':'')+'</div></div>'+
-    '<div class="seg"><button class="rbtn" data-act="curtain" data-v="up" title="Upp">'+icon('up')+'</button>'+
-    '<button class="rbtn" data-act="curtain" data-v="idle" title="Stopp">'+icon('stop')+'</button>'+
-    '<button class="rbtn" data-act="curtain" data-v="down" title="Ner">'+icon('down')+'</button></div>';
+    '<div class="txt"><b>Gardin</b><div class="sub">'+(closed===true?'Stängd':closed===false?'Öppen':'–')+(b!=null?' · batteri '+num(b,0)+' %':'')+'</div></div>'+
+    '<div class="seg"><button class="cbtn'+(closed===false?' cur':'')+'" data-act="curtain" data-v="up" title="Öppna gardinen (upp)">'+icon('up')+'<span>Öppna</span></button>'+
+    '<button class="rbtn" data-act="curtain" data-v="idle" title="Stoppa">'+icon('stop')+'</button>'+
+    '<button class="cbtn'+(closed===true?' cur':'')+'" data-act="curtain" data-v="down" title="Stäng gardinen (ner)">'+icon('down')+'<span>Stäng</span></button></div>';
 }
 function renderClimate(){
   var n = D.indoor, w = D.vind, nok = netatmoOk(), co2 = nok ? v(n,'measure_co2') : null;
@@ -1446,6 +1457,13 @@ hwPoll(); setInterval(hwPoll, 2000);
 audPoll(); setInterval(audPoll, 5000);
 spPoll(); setInterval(spPoll, 5000); spDevices(); setInterval(spDevices, 30000);
 
+/* Uppdatera-knappen: töm cache och hämta senaste versionen (start-pc.html hämtar alltid färskt från GitHub) */
+$('reload').addEventListener('click', function(){
+  this.classList.add('spin'); toast('Uppdaterar…');
+  function go(){ try{ localStorage.removeItem('pcDash.cache'); }catch(e){} location.reload(); }
+  try{ if(window.caches && caches.keys){ caches.keys().then(function(k){ return Promise.all(k.map(function(n){ return caches.delete(n); })); }).then(go, go); return; } }catch(e){}
+  go();
+});
 /* Automatisk uppdatering: om sidan laddats via start.html kollas GitHub var 10:e minut */
 (function(){
   var src=null, cur=null;
