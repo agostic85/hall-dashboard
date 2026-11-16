@@ -492,7 +492,44 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
 .clim1 .cv b{font-weight:600}
 .clim2{display:flex;flex-wrap:wrap;gap:.15rem .9rem;font-size:.8rem;color:var(--muted);margin-top:.35rem}
 .clim2 b{color:var(--text);font-weight:500}
-#lights,#lights2{flex:1;min-height:0;grid-auto-rows:minmax(4.6rem,1fr)}
+/* Kompakta lampknappar: ikon till vänster, text till höger */
+#lights,#lights2{grid-auto-rows:3.1rem;gap:.45rem}
+#lights .tile,#lights2 .tile{flex-direction:column;align-items:flex-start;justify-content:center;gap:0;padding:.3rem .75rem}
+#lights .tile .ic,#lights2 .tile .ic{display:none}
+#lights .tile > span:last-of-type,#lights2 .tile > span:last-of-type{min-width:0}
+#lights .nm,#lights2 .nm{font-size:.88rem}
+#lights .tile .st,#lights2 .tile .st{font-size:.74rem;margin-top:0}
+.lights .head{margin-bottom:.55rem}
+.lights .curtain{margin-top:.6rem;padding-top:.6rem}
+#cal{flex:1;display:flex;flex-direction:column}
+#cal .cal-list{margin-top:.1rem}
+#cal .cday{display:grid;grid-template-columns:6.5rem 1fr;gap:.6rem;padding:.45rem 0}
+#cal .cday h3{margin:0;padding-top:.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#cal .cday.today h3{color:var(--cyan)}
+#cal .cday.later h3{font-weight:500}
+.seg-days{display:flex;flex-wrap:wrap;gap:.35rem}
+.seg-days button{padding:.45rem .75rem;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:.85rem}
+.seg-days button.on{background:linear-gradient(135deg,var(--pink),var(--cyan));border-color:transparent;color:#120612}
+.tm-pick{display:flex;align-items:center;gap:.7rem}
+.tm-wheels{position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:.1rem;height:9rem;padding:0 .5rem;border-radius:1rem;
+  background:linear-gradient(160deg,#1b2029,#14181f);box-shadow:inset 0 1px 0 rgba(255,255,255,.04);transition:opacity .25s}
+.tm-wheels::before{content:"";position:absolute;left:.5rem;right:.5rem;top:50%;height:2.2rem;margin-top:-1.1rem;border-radius:.7rem;
+  background:linear-gradient(160deg,rgba(90,169,255,.16),rgba(90,169,255,.07));box-shadow:inset 0 0 0 1px rgba(90,169,255,.25);pointer-events:none}
+.tm-wheel{position:relative;width:4.2rem;height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;overscroll-behavior:contain;
+  padding:3.4rem 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;touch-action:pan-y;
+  -webkit-mask-image:linear-gradient(transparent 0,#000 32%,#000 68%,transparent 100%);mask-image:linear-gradient(transparent 0,#000 32%,#000 68%,transparent 100%)}
+.tm-wheel::-webkit-scrollbar{display:none}
+.tm-wheel div{height:2.2rem;line-height:2.2rem;text-align:center;scroll-snap-align:center;font-size:1.3rem;color:var(--faint);transition:color .15s,font-size .15s}
+.tm-wheel div.sel{color:var(--text);font-size:1.55rem;font-weight:600}
+.tm-colon{font-size:1.5rem;font-weight:600;color:var(--muted);z-index:1;padding-bottom:.15rem}
+.tm-side{display:flex;flex-direction:column;gap:.45rem;align-items:stretch;min-width:6.2rem}
+.tm-side .btn{justify-content:center;padding:.55rem .8rem;font-size:.85rem}
+.tm-side .btn.on{background:linear-gradient(135deg,var(--pink),var(--cyan));color:#120612}
+.tm-val{text-align:center;font-family:var(--disp);font-size:.95rem;color:var(--text)}
+.tm-pick.allday .tm-wheels{opacity:.35}
+.tm-pick.allday .tm-val{visibility:hidden}
+.tm-pick.allday .tm-wheels::before{background:rgba(255,255,255,.04);box-shadow:none}
+
 #printers{display:flex;flex-direction:column}
 #printers .printer{flex:1;display:flex;flex-direction:column;gap:.55rem;padding:.75rem 0 .6rem;min-height:0}
 #printers .printer:last-child{padding-bottom:0}
@@ -585,7 +622,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
     </section>
 
     <section class="col col-mid">
-      <div class="card lights" style="flex:1.15">
+      <div class="card lights">
         <div class="head">
           <h2><svg><use href="#i-bulb"/></svg>Kontoret <span class="sub" id="lightCount" style="text-transform:none;letter-spacing:0;font-weight:400"></span></h2>
           <div class="scenes" id="scenes">
@@ -596,7 +633,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
         </div>
         <div class="tiles3" id="lights"></div>
       </div>
-      <div class="card lights" style="flex:1">
+      <div class="card lights">
         <div class="head">
           <h2><svg><use href="#i-bulb"/></svg>Sovrummet <span class="sub" id="lightCount2" style="text-transform:none;letter-spacing:0;font-weight:400"></span></h2>
           <button class="btn" data-act="alloff" data-g="bedroom"><svg><use href="#i-power"/></svg>Släck sovrummet</button>
@@ -604,6 +641,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
         <div class="tiles4" id="lights2"></div>
         <div class="curtain" id="curtain"></div>
       </div>
+      <div class="card" id="cal"></div>
     </section>
 
     <section class="col col-right">
@@ -622,6 +660,15 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
   </div>
 </div>
 
+<div class="scrim" id="calScrim">
+  <div class="sheet">
+    <h3>Lägg till i kalendern</h3>
+    <div class="field"><label>Vad?</label><input id="calS" maxlength="120" autocomplete="off" placeholder="t.ex. Tandläkare Bianca"></div>
+    <div class="field"><label>Dag</label><div class="seg-days" id="calDays"></div></div>
+    <div class="field"><label>Tid – rulla för att välja, annars heldag</label><div class="tm-pick allday" id="calPick"><div class="tm-wheels" id="calWheels"><div class="tm-wheel" id="calH"></div><span class="tm-colon">:</span><div class="tm-wheel" id="calM"></div></div><div class="tm-side"><div class="tm-val" id="calTv">Heldag</div><button class="btn on" data-act="calnotime" id="calAllBtn">Heldag</button></div></div><input type="hidden" id="calT"></div>
+    <div class="acts"><button class="btn" data-act="calclose">Avbryt</button><button class="btn primary" data-act="calsave">Spara</button></div>
+  </div>
+</div>
 <div class="scrim" id="setScrim">
   <div class="sheet">
     <h3>Anslut till Homey Pro</h3>
@@ -653,6 +700,7 @@ var CONFIG = {
   address: '',          // t.ex. 'http://192.168.1.50' eller 'https://192-168-1-50.homey.homeylocal.com'
   token:   '',          // API-nyckel från Homey (Inställningar → API-nycklar)
   pollMs:  5000,        // hur ofta status hämtas
+  calNewVar: 'df3f83f2-d593-42cd-a898-68f80a8e4e8e', // Homey-variabel kalender_ny (→ flödet "Hall-dashboard: skriv till kalender")
   calVar:  '752c7899-166f-4a3c-b474-3eeb5807ff15', // Homey-variabel kalender_vecka (fylls av flödet "Hall-dashboard: hämta kalender")
   nightFrom: 22, nightTo: 6,   // skärmen dimmas mellan dessa timmar
   dev: {
@@ -1058,19 +1106,77 @@ function loadCal(){
     cal = JSON.parse(x.value || '{}'); calErr = ''; renderCal();
   }).catch(function(e){ calErr = e.message; renderCal(); });
 }
+var calSel = null;
+function openCalAdd(){
+  $('calS').value = ''; calSel = ymd(new Date()); renderCalDays();
+  $('calScrim').classList.add('show');
+  /* rullhjulen startar på nästa hela timme, men heldag är förvalt tills man rullar */
+  tmInit(); calAllDay = true; var nh = (new Date().getHours()+1)%24;
+  requestAnimationFrame(function(){ tmSet($('calH'), nh); tmSet($('calM'), 0); tmSync(); });
+  setTimeout(function(){ $('calS').focus(); }, 60);
+}
+/* ---- Tidsväljare (rullhjul) ---- */
+var calAllDay = true, tmReady = false, tmRaf = 0;
+function tmInit(){
+  if(tmReady) return; tmReady = true;
+  function fill(el, n, step){ var h=''; for(var i=0;i<n;i+=step){ var s=('0'+i).slice(-2); h+='<div data-v="'+s+'">'+s+'</div>'; } el.innerHTML = h; }
+  fill($('calH'), 24, 1); fill($('calM'), 60, 5);
+  ['calH','calM'].forEach(function(id){
+    var el = $(id);
+    el.addEventListener('scroll', function(){ cancelAnimationFrame(tmRaf); tmRaf = requestAnimationFrame(tmSync); }, {passive:true});
+    el.addEventListener('click', function(e){ var d = e.target.closest('div[data-v]'); if(!d) return; calAllDay = false; tmSet(el, [].indexOf.call(el.children, d), true); tmSync(); });
+  });
+  $('calWheels').addEventListener('pointerdown', function(){ if(calAllDay){ calAllDay = false; tmSync(); } });
+  $('calWheels').addEventListener('wheel', function(){ if(calAllDay){ calAllDay = false; tmSync(); } }, {passive:true});
+}
+function tmIdx(el){ var ih = el.firstChild ? el.firstChild.offsetHeight : 0; if(!ih) return 0; return Math.max(0, Math.min(el.children.length-1, Math.round(el.scrollTop/ih))); }
+function tmSet(el, i, smooth){ var ih = el.firstChild.offsetHeight; if(el.scrollTo) el.scrollTo({top:i*ih, behavior:smooth?'smooth':'auto'}); else el.scrollTop = i*ih; }
+function tmSync(){
+  var h = $('calH'), m = $('calM'), hi = tmIdx(h), mi = tmIdx(m);
+  [h,m].forEach(function(el, k){ var s = k ? mi : hi; for(var i=0;i<el.children.length;i++) el.children[i].classList.toggle('sel', i===s); });
+  var tv = h.children[hi].dataset.v + ':' + m.children[mi].dataset.v;
+  $('calT').value = calAllDay ? '' : tv;
+  $('calTv').textContent = calAllDay ? 'Heldag' : 'kl ' + tv;
+  $('calPick').classList.toggle('allday', calAllDay);
+  $('calAllBtn').classList.toggle('on', calAllDay);
+}
+function renderCalDays(){
+  var t = new Date(), h = '';
+  for(var i=0;i<14;i++){
+    var d = new Date(t.getFullYear(), t.getMonth(), t.getDate()+i), k = ymd(d);
+    var l = i===0 ? 'Idag' : i===1 ? 'Imorgon' : d.toLocaleDateString('sv-SE',{weekday:'short', day:'numeric'});
+    h += '<button class="'+(k===calSel?'on':'')+'" data-act="calday" data-d="'+k+'">'+l+'</button>';
+  }
+  $('calDays').innerHTML = h;
+}
+function saveCal(){
+  var s = $('calS').value.trim(); if(!s){ toast('Skriv vad som ska hända'); return; }
+  var req = {s:s, d:calSel, t:$('calT').value||'', id:Date.now()};
+  $('calScrim').classList.remove('show');
+  if(!cal) cal = {ev:[]};
+  cal.ev = (cal.ev||[]).concat([{d:req.d, s:s, a:req.t?0:1, t:req.t, e:''}]); renderCal();
+  if(DEMO){ toast('Demoläge – sparas inte'); return; }
+  var val = JSON.stringify(req), path = '/manager/logic/variable/'+CONFIG.calNewVar;
+  function ok(x){ return x && (x.value===val || x.value==='-'+req.id); }
+  api('PUT', path, {value:val}).catch(function(){ return null; })
+    .then(function(){ return api('GET', path); })
+    .then(function(x){ if(ok(x)) return x; return api('PUT', path, {variable:{value:val}}).then(function(){ return api('GET', path); }); })
+    .then(function(x){ if(!ok(x)) throw new Error('kunde inte skriva till Homey'); toast('Sparat – syns i telefonerna om en stund'); setTimeout(loadCal, 15000); })
+    .catch(function(e){ toast('Kunde inte spara ('+e.message+')'); });
+}
 function renderCal(){
   var el = $('cal'); if(!el) return;
-  var head = '<div class="head"><h2>'+icon('calendar')+'Veckans kalender</h2>'+(cal && cal.u && cal.u!=='demo' ? '<span class="sub">uppdaterad '+cal.u+'</span>' : '')+'</div>';
+  var head = '<div class="head"><h2>'+icon('calendar')+'Kalender</h2><button class="btn" data-act="caladd">+ Lägg till</button></div>';
   if(!cal || !cal.ev){ el.innerHTML = head + '<div class="sub" style="margin-top:.6rem">'+(calErr ? 'Kunde inte läsa kalendern ('+esc(calErr)+')' : 'Hämtar kalender…')+'</div>'; return; }
   var t = new Date(), h = '';
-  for(var i=0;i<7;i++){
+  for(var i=0;i<4;i++){
     var d = new Date(t.getFullYear(), t.getMonth(), t.getDate()+i), k = ymd(d);
     var lbl = i===0 ? 'Idag' : i===1 ? 'Imorgon' : d.toLocaleDateString('sv-SE',{weekday:'long', day:'numeric', month:'short'}).replace(/^./, function(c){ return c.toUpperCase(); });
     var evs = cal.ev.filter(function(x){ return x.d===k; });
-    h += '<div class="cday'+(i===0?' today':'')+'"><h3>'+lbl+'</h3>' + (evs.length ? evs.map(function(x){
+    h += '<div class="cday'+(i===0?' today':'')+(i>1?' later':'')+'"><h3>'+lbl+'</h3><div>' + (evs.length ? evs.map(function(x){
       var tm = x.a ? 'Heldag' : (x.t ? x.t + (x.e ? '–'+x.e : '') : (x.e ? 'till '+x.e : ''));
       return '<div class="cev"><span class="ct">'+tm+'</span><span class="cs">'+esc(x.s)+'</span></div>';
-    }).join('') : '<div class="cempty">Inget inplanerat</div>') + '</div>';
+    }).join('') : '<div class="cempty">Inget inplanerat</div>') + '</div></div>';
   }
   el.innerHTML = head + '<div class="cal-list">'+h+'</div>';
 }
@@ -1517,6 +1623,11 @@ document.addEventListener('click', function(e){
     case 'spsonos': sonosFavorite(t.dataset.id); break;
     case 'audout': setAudio(+t.dataset.i); break;
     case 'sprefresh': spDevices(); spPoll(); break;
+    case 'caladd': openCalAdd(); break;
+    case 'calday': calSel = t.dataset.d; renderCalDays(); break;
+    case 'calnotime': calAllDay = true; tmSync(); break;
+    case 'calclose': $('calScrim').classList.remove('show'); break;
+    case 'calsave': saveCal(); break;
     case 'dimclose': closeDim(); break;
     case 'setclose': $('setScrim').classList.remove('show'); break;
     case 'setsave':
@@ -1592,6 +1703,7 @@ renderClock(); setInterval(renderClock, 10000);
 /* OLED: flytta hela ytan några pixlar var 3:e minut så att statiska delar inte bränns in */
 setInterval(function(){ var r = function(){ return Math.round(Math.random()*6-3); }; document.querySelector('.app').style.transform = 'translate('+r()+'px,'+r()+'px)'; }, 3*60*1000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
+loadCal(); setInterval(loadCal, 60*1000);
 hwPoll(); setInterval(hwPoll, 2000);
 audPoll(); setInterval(audPoll, 5000);
 spPoll(); setInterval(spPoll, 5000); spDevices(); setInterval(spDevices, 30000);
