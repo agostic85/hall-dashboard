@@ -458,11 +458,11 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
 .card{min-width:0}
 .printer{padding:.6rem 0}
 .printer .row1{gap:.5rem}
-.printer .pl{gap:.6rem;min-width:0}
-.printer .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.05rem}
+.printer .pl{gap:.9rem;min-width:0}
+.printer .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.35rem}
 .printer .stat{flex:none;white-space:nowrap}
-.pwr-ic{width:2.9rem;height:2.9rem;border-radius:.8rem}
-.pwr-ic svg{width:2.3rem;height:2.3rem}
+.pwr-ic{width:5.4rem;height:5.4rem;border-radius:1.1rem;border-width:3px}
+.pwr-ic svg{width:4.3rem;height:4.3rem}
 .pc-bar{height:2rem;margin-top:.5rem}
 .pc-bar span{font-size:1.05rem}
 .pc-kv{font-size:.9rem;margin-top:.35rem}
@@ -568,7 +568,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
 .tm-pick.allday .tm-wheels::before{background:rgba(255,255,255,.04);box-shadow:none}
 
 #printers{display:flex;flex-direction:column}
-#printers .printer{flex:1;display:flex;flex-direction:column;gap:.55rem;padding:.75rem 0 .6rem;min-height:0}
+#printers .printer{flex:1 1 auto;display:flex;flex-direction:column;gap:.55rem;padding:.75rem 0 .6rem}
 #printers .printer:last-child{padding-bottom:0}
 .pbig{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin-top:auto}
 .pbig .pp{font-family:var(--disp);font-size:3.6rem;line-height:1;letter-spacing:-.02em}
@@ -578,6 +578,13 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
 .pbig .pr small{color:var(--muted);font-size:.9rem;margin-left:.35rem}
 #printers .pc-bar{height:1rem;border-radius:99px;padding:0;margin:0;flex:none}
 #printers .pc-kv{font-size:1.1rem;margin:0}
+#printers.both .printer{gap:.35rem;padding:.5rem 0 .45rem}
+#printers.both .pbig .pp{font-size:2.9rem}
+#printers.both .pbig .pr b{font-size:1.75rem}
+#printers.both .pc-bar{height:.8rem}
+#printers.both .pc-kv{font-size:1rem}
+#printers.both .pwr-ic{width:4.8rem;height:4.8rem}
+#printers.both .pwr-ic svg{width:3.8rem;height:3.8rem}
 .pidle{flex:1;display:flex;flex-direction:column;justify-content:center;min-width:0}
 .pidle .ps{font-family:var(--disp);font-size:2.3rem;line-height:1.15;color:var(--text)}
 .pidle .ps.done{color:var(--teal)}
@@ -1456,6 +1463,7 @@ function renderPrinters(){
     temps:[['Hotend',num(v(u,'printer_hotend_temperature'),0)],['Bädd',num(v(u,'printer_bed_temperature'),0)],['Kammare',num(v(u,'measure_temperature.temperature_sensor_cavity'),0)]],
     w:num(v(D.u1Plug,'measure_power'),0), power:{on:!!v(D.u1Plug,'onoff'), id:D.u1Plug, ic:'u1'}});
   $('printers').innerHTML = h;
+  $('printers').classList.toggle('both', $('printers').querySelectorAll('.printer.run').length > 1);   /* båda skriver: lite tätare */
 }
 function renderSonos(){
   var ae = document.activeElement; if(ae && ae.dataset && ae.dataset.vol) return;
