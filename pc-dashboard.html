@@ -425,9 +425,9 @@ header{display:none}
 .off-chip{display:none;position:fixed;left:50%;bottom:.8rem;transform:translateX(-50%);z-index:15}
 body.offline .off-chip{display:inline-flex}
 /* Uppdatera-knapp nere till vänster (rubrikraden är dold) */
-#reload{position:fixed;left:1.5rem;bottom:1.5rem;z-index:14;opacity:.55;transition:opacity .2s}
-#reload:hover{opacity:1}
-#reload.spin{opacity:1}
+#reload{width:2.3rem;height:2.3rem;opacity:.7}
+#reload svg{width:1.05rem;height:1.05rem}
+#reload:hover,#reload.spin{opacity:1}
 #reload.spin svg{animation:rlspin .8s linear infinite}
 @keyframes rlspin{to{transform:rotate(360deg)}}
 /* === Spotify kompakt: bara knappar + ljudutgång === */
@@ -451,6 +451,25 @@ body.offline .off-chip{display:inline-flex}
 .sp-t.out.on svg{color:var(--pink)}
 .sp-t.cold{opacity:.55;border:1px dashed rgba(255,255,255,.18)}
 .sp-gear{opacity:.7}
+/* === Anpassat för 1280×720 (fönster på Monstret) === */
+html{font-size:clamp(12px,1.08vw,18px)}
+main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
+.col{min-width:0}
+.card{min-width:0}
+.printer{padding:.6rem 0}
+.printer .row1{gap:.5rem}
+.printer .pl{gap:.6rem;min-width:0}
+.printer .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:1.05rem}
+.printer .stat{flex:none;white-space:nowrap}
+.pwr-ic{width:2.9rem;height:2.9rem;border-radius:.8rem}
+.pwr-ic svg{width:2.3rem;height:2.3rem}
+.pc-bar{height:2rem;margin-top:.5rem}
+.pc-bar span{font-size:1.05rem}
+.pc-kv{font-size:.9rem;margin-top:.35rem}
+.ptemps{font-size:.8rem;gap:.15rem .7rem;margin-top:.35rem}
+.sp-grid{grid-auto-rows:5.2rem;gap:.5rem}
+.sp-grid.c3{margin-bottom:.5rem}
+.sp-head{margin-bottom:.4rem}
 </style>
 </head>
 <body>
@@ -506,7 +525,6 @@ body.offline .off-chip{display:inline-flex}
     <button class="iconbtn" id="gear" aria-label="Inställningar"><svg><use href="#i-gear"/></svg></button>
   </header>
   <div class="chip bad off-chip" id="offChip"></div>
-  <button class="iconbtn" id="reload" aria-label="Uppdatera dashboarden" title="Uppdatera"><svg><use href="#i-reload"/></svg></button>
 
   <main>
     <section class="col col-left">
@@ -1201,7 +1219,7 @@ function renderClimate(){
   var cc = co2==null?'':co2<1000?'co2-good':co2<1400?'co2-ok':'co2-bad';
   var ct = co2==null?netatmoWhy():co2<1000?'Bra luft':co2<1400?'Vädra snart':'Vädra nu';
   var pon = !!v(D.purifier,'onoff'), pw = v(D.purifier,'measure_power');
-  $('climate').innerHTML = '<div class="head"><h2>'+icon('therm')+'Inomhusklimat kontor</h2></div>'+
+  $('climate').innerHTML = '<div class="head"><h2>'+icon('therm')+'Inomhusklimat kontor</h2><button class="iconbtn'+(reloading?' spin':'')+'" id="reload" aria-label="Uppdatera dashboarden" title="Uppdatera dashboarden">'+icon('reload')+'</button></div>'+
     '<div class="co2big"><span class="big '+cc+'">'+num(co2,0)+'</span><span class="unit">ppm CO₂</span><span class="lvl '+(cc==='co2-good'?'low':cc==='co2-ok'?'mid':cc?'high':'')+'">'+ct+'</span></div>'+
     '<div class="kpi">'+
       '<div><small>Temperatur</small><b>'+num(officeTemp())+'°</b></div>'+
@@ -1525,8 +1543,10 @@ audPoll(); setInterval(audPoll, 5000);
 spPoll(); setInterval(spPoll, 5000); spDevices(); setInterval(spDevices, 30000);
 
 /* Uppdatera-knappen: töm cache och hämta senaste versionen (start-pc.html hämtar alltid färskt från GitHub) */
-$('reload').addEventListener('click', function(){
-  this.classList.add('spin'); toast('Uppdaterar…');
+var reloading = false;
+document.addEventListener('click', function(e){
+  var b = e.target.closest && e.target.closest('#reload'); if(!b) return;
+  reloading = true; b.classList.add('spin'); toast('Uppdaterar…');
   function go(){ try{ localStorage.removeItem('pcDash.cache'); }catch(e){} location.reload(); }
   try{ if(window.caches && caches.keys){ caches.keys().then(function(k){ return Promise.all(k.map(function(n){ return caches.delete(n); })); }).then(go, go); return; } }catch(e){}
   go();
