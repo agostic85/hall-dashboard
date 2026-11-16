@@ -501,6 +501,35 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
 #lights .tile .st,#lights2 .tile .st{font-size:.74rem;margin-top:0}
 .lights .head{margin-bottom:.55rem}
 .lights .curtain{margin-top:.6rem;padding-top:.6rem}
+#news{flex:1;display:flex;flex-direction:column}
+#news .head{margin-bottom:.35rem}
+.nw-list{flex:1;min-height:0;overflow:hidden}
+.nw-row{cursor:pointer}
+.nw-row:hover{background:rgba(255,255,255,.04)}
+.nw-row{display:grid;grid-template-columns:3.1rem 1fr;gap:.55rem;padding:.38rem .45rem;border-radius:.7rem;transition:background .4s}
+.nw-row+.nw-row{margin-top:.1rem}
+.nw-row.on{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02))}
+.nw-tm{font-size:.72rem;color:var(--muted);padding-top:.15rem;white-space:nowrap}
+.nw-h{font-size:.88rem;line-height:1.3;min-width:0}
+.nw-h b{font-weight:500;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nw-row.on .nw-h b{font-weight:600}
+.nw-s{display:-webkit-box;font-size:.76rem;color:var(--muted);margin-top:.15rem;line-height:1.35;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.tag{display:inline-block;font-size:.6rem;font-weight:600;letter-spacing:.04em;padding:.06rem .4rem;border-radius:99px;margin-right:.4rem;vertical-align:.08rem}
+.tag.p4{background:rgba(90,169,255,.16);color:var(--blue)} .tag.ekot{background:rgba(167,139,250,.16);color:var(--violet)} .tag.usa{background:rgba(255,120,120,.15);color:#ff9a9a}
+.legend{display:flex;gap:.2rem;align-items:center}
+.nw-row{cursor:pointer}
+.nw-row:active{background:rgba(255,255,255,.08)}
+.news-sheet{width:min(46rem,92vw);max-height:86vh;display:flex;flex-direction:column}
+.news-meta{display:flex;align-items:center;font-size:.78rem;color:var(--muted);margin-bottom:.5rem}
+.news-sheet h3{font-family:inherit;font-weight:600;font-size:1.35rem;line-height:1.3;margin-bottom:.8rem}
+.news-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:.4rem;-webkit-overflow-scrolling:touch}
+.news-body p{font-size:1rem;line-height:1.55;margin-bottom:.75rem;color:#d9dee8}
+.news-body p.li{position:relative;padding-left:1.1rem;font-weight:500;color:var(--text)}
+.news-body p.li::before{content:"";position:absolute;left:.15rem;top:.62rem;width:.4rem;height:.4rem;border-radius:50%;background:var(--blue)}
+.news-body p.h{font-weight:600;color:var(--text);margin-top:.4rem}
+.news-sheet .acts{margin-top:.8rem}
+.tag.ny{background:rgba(62,207,142,.18);color:var(--good)}
+.tag.p4{background:rgba(34,211,238,.14);color:var(--cyan)} .tag.ekot{background:rgba(192,132,252,.16);color:var(--violet)}
 #cal{flex:1;display:flex;flex-direction:column}
 #cal .cal-list{margin-top:.1rem}
 #cal .cday{display:grid;grid-template-columns:6.5rem 1fr;gap:.6rem;padding:.45rem 0}
@@ -589,6 +618,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
     <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5v14l10-7zM18 5v14"/></symbol>
     <symbol id="i-sofa" viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4H2z"/><path d="M5 17v2M19 17v2"/></symbol>
     <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-news" viewBox="0 0 24 24"><path d="M4 5h13v14H6a2 2 0 0 1-2-2z"/><path d="M17 9h3v8a2 2 0 0 1-2 2"/><path d="M7 9h7M7 12.5h7M7 16h4"/></symbol>
     <symbol id="i-reload" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16"/><path d="M20 21v-5h-5"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
     <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
@@ -641,7 +671,7 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
         <div class="tiles4" id="lights2"></div>
         <div class="curtain" id="curtain"></div>
       </div>
-      <div class="card" id="cal"></div>
+      <div class="card news" id="news"></div>
     </section>
 
     <section class="col col-right">
@@ -660,13 +690,12 @@ main{grid-template-columns:minmax(0,1fr) minmax(0,1.32fr) minmax(0,1.05fr)}
   </div>
 </div>
 
-<div class="scrim" id="calScrim">
-  <div class="sheet">
-    <h3>Lägg till i kalendern</h3>
-    <div class="field"><label>Vad?</label><input id="calS" maxlength="120" autocomplete="off" placeholder="t.ex. Tandläkare Bianca"></div>
-    <div class="field"><label>Dag</label><div class="seg-days" id="calDays"></div></div>
-    <div class="field"><label>Tid – rulla för att välja, annars heldag</label><div class="tm-pick allday" id="calPick"><div class="tm-wheels" id="calWheels"><div class="tm-wheel" id="calH"></div><span class="tm-colon">:</span><div class="tm-wheel" id="calM"></div></div><div class="tm-side"><div class="tm-val" id="calTv">Heldag</div><button class="btn on" data-act="calnotime" id="calAllBtn">Heldag</button></div></div><input type="hidden" id="calT"></div>
-    <div class="acts"><button class="btn" data-act="calclose">Avbryt</button><button class="btn primary" data-act="calsave">Spara</button></div>
+<div class="scrim" id="newsScrim">
+  <div class="sheet news-sheet">
+    <div class="news-meta" id="newsMeta"></div>
+    <h3 id="newsTitle"></h3>
+    <div class="news-body" id="newsBody"></div>
+    <div class="acts"><button class="btn primary" data-act="newsclose">Stäng</button></div>
   </div>
 </div>
 <div class="scrim" id="setScrim">
@@ -1537,6 +1566,112 @@ function renderSpotify(){
     ctl+'<div class="sp-grid c2">'+outs+'</div>';
 }
 
+/* ===================== Nyheter (Sveriges Radio: P4 Jämtland + Ekot) ===================== */
+var NEWS_SRC = [{k:'p4', n:'P4 Jämtland', u:'https://api.sr.se/api/rss/program/78'}, {k:'ekot', n:'Ekot', u:'https://api.sr.se/api/rss/program/83'}];
+var NEWS_SKIP = /P4-toppen/i;   // rubriker som aldrig ska visas (lägg till fler med |)
+var news = null, newsErr = '';
+var NEWS_NEW_MIN = 30;   // så länge en ny nyhet märks med "NY" (minuter)
+function txt(html){ var d = document.createElement('div'); d.innerHTML = html||''; var p = d.querySelector('li,p'); return ((p||d).textContent||'').replace(/\s+/g,' ').trim(); }
+var NEWS_LBL = {p4:['P4','P4 JÄMTLAND'], ekot:['EKOT','EKOT'], usa:['USA','USA-POLITIK']};
+/* USA-politik/Trump hämtas av Homey-flödet "Hall-dashboard: hämta USA-nyheter (Trump)" via Google Nyheter
+   (svenska medier, Aftonbladet bortfiltrerat). Webbläsaren får inte läsa flödet direkt, därför går det via Homey. */
+var USA_VAR = '154c343f-984a-415f-8aad-b2e2095841a0', USA_MAX = 6;
+function loadUSA(){
+  if(DEMO) return Promise.resolve([]);
+  return api('GET', '/manager/logic/variable/'+USA_VAR).then(function(v){
+    var j = JSON.parse(v.value || '{}');
+    return (j.it||[]).map(function(x){
+      var src = String(x.p || 'okänd källa').split(' – ')[0];
+      return {k:'usa', n:src, t:x.t, s:'Källa: '+src, sh:'<p>Källa: '+esc(src)+'</p>', c:'<p>Google Nyheter visar bara rubriken – hela artikeln finns hos '+esc(src)+'.</p>', u:x.l||'', d:new Date(x.d)};
+    });
+  }).catch(function(){ return []; });
+}
+/* Dubbletter: samma händelse från flera källor visas bara en gång.
+   Rubrikerna jämförs på viktiga ord (småord bort, ordstam = 5 första tecknen).
+   Delar de minst 60 % av orden räknas de som samma nyhet. Prioritet: P4 Jämtland > Ekot > USA-flödet. */
+var NEWS_PRIO = {p4:0, ekot:1, usa:2};
+var NEWS_STOP = ' och att det som för med har inte den till var från efter när kan ska nya nytt över under sig han hon man där vid mot blir får efter just mer än även hur vad ett en på av är om i ';
+function nwords(t){
+  var w = String(t).toLowerCase().replace(/^just nu:?\s*/,'').replace(/[^a-zåäöéü0-9 ]+/g,' ').split(/\s+/), s = {};
+  w.forEach(function(x){ if(x.length < 3 || NEWS_STOP.indexOf(' '+x+' ') >= 0) return; s[x.slice(0,5)] = 1; });
+  return Object.keys(s);
+}
+function nsame(a, b){
+  var n = 0; a.forEach(function(x){ if(b.indexOf(x) >= 0) n++; });
+  var m = Math.min(a.length, b.length); return m >= 2 && n / m >= 0.6;
+}
+function dedupNews(list){
+  var keep = [];
+  list.slice().sort(function(p,q){ return (NEWS_PRIO[p.k]-NEWS_PRIO[q.k]) || (q.d - p.d); }).forEach(function(x){
+    x.w = nwords(x.t);
+    for(var i=0;i<keep.length;i++){ if(keep[i].t === x.t || nsame(keep[i].w, x.w)) return; }
+    keep.push(x);
+  });
+  return keep;
+}
+function loadNews(){
+  Promise.all(NEWS_SRC.map(function(src){
+    return fetch(src.u, {cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.text(); }).then(function(t){
+      var x = new DOMParser().parseFromString(t, 'text/xml');
+      return [].slice.call(x.querySelectorAll('entry,item'), 0, 12).map(function(e){
+        var q = function(s){ var n = e.querySelector(s); return n ? n.textContent : ''; };
+        var ln = e.querySelector('link'); return {k:src.k, n:src.n, t:q('title').trim(), s:txt(q('summary,description')), sh:q('summary,description'), c:q('content'), u:ln ? (ln.getAttribute('href')||ln.textContent) : '', d:new Date(q('updated,pubDate,published'))};
+      });
+    }).catch(function(){ return []; });
+  }).concat([loadUSA()])).then(function(all){
+    var a = [].concat.apply([], all).filter(function(x){ return x.t && !isNaN(x.d) && !NEWS_SKIP.test(x.t + ' ' + x.s); });
+    a = dedupNews(a);
+    var nu = 0; a = a.filter(function(x){ return x.k !== 'usa' || ++nu <= USA_MAX; });   /* högst 6 USA-nyheter efter dubblettrensning */
+    a.sort(function(p,q){ return q.d - p.d; });
+    if(a.length){ newsErr = ''; news = a.slice(0, 16); renderNews(); }
+    else if(!news){ newsErr = 'Kunde inte hämta nyheter'; renderNews(); }
+  });
+}
+function whenLbl(d){
+  var t = new Date(), same = d.toDateString()===t.toDateString(), hm = d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});
+  return same ? hm : d.toLocaleDateString('sv-SE',{weekday:'short'})+' '+hm;
+}
+function renderNews(){
+  var el = $('news'); if(!el) return;
+  var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4</span><span class="tag ekot">EKOT</span><span class="tag usa">USA</span></span></div>';
+  if(!news){ el.innerHTML = head + '<div class="sub">'+(newsErr||'Hämtar nyheter…')+'</div>'; return; }
+  el.innerHTML = head + '<div class="nw-list">' + news.map(function(x,i){
+    return '<div class="nw-row" data-act="news" data-i="'+i+'"><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b><span class="tag '+x.k+'">'+NEWS_LBL[x.k][0]+'</span>'+esc(x.t)+'</b>'+
+      (x.s ? '<div class="nw-s">'+esc(x.s)+'</div>' : '')+'</div></div>';
+  }).join('') + '</div>';
+  nwFit();
+}
+/* visa bara hela rader – den som inte får plats döljs */
+function nwFit(){
+  var L = document.querySelector('#news .nw-list'); if(!L) return;
+  var max = L.getBoundingClientRect().bottom;
+  [].forEach.call(L.children, function(r){ r.style.visibility = r.getBoundingClientRect().bottom > max + 1 ? 'hidden' : ''; });
+}
+window.addEventListener('resize', nwFit);
+/* Popup med hela nyheten (texten finns i SR:s flöde – ingen extern sida behöver öppnas) */
+function richText(html){
+  var doc = new DOMParser().parseFromString('<div>'+(html||'')+'</div>', 'text/html'), out = [];
+  [].forEach.call(doc.body.querySelectorAll('p,li,h2,h3,h4'), function(n){
+    if(n.tagName==='LI' && n.querySelector('p')) return;
+    var t = (n.textContent||'').replace(/\s+/g,' ').trim(); if(!t) return;
+    var li = n.tagName==='LI' || (n.parentNode && n.parentNode.tagName==='LI');
+    out.push({t:t, li:li, h:/^H/.test(n.tagName)});
+  });
+  if(!out.length){ var t = (doc.body.textContent||'').replace(/\s+/g,' ').trim(); if(t) out.push({t:t}); }
+  return out;
+}
+var newsOpen = -1;
+function openNews(i){
+  var x = news && news[i]; if(!x) return; newsOpen = i;
+  var seen = {}, parts = richText(x.sh).concat(richText(x.c)).filter(function(p){ if(seen[p.t] || /^Lyssna:/i.test(p.t) || /@sverigesradio\.se/i.test(p.t)) return false; seen[p.t] = 1; return true; });
+  $('newsMeta').innerHTML = '<span class="tag '+x.k+'">'+NEWS_LBL[x.k][1]+'</span>'+whenLbl(x.d);
+  $('newsTitle').textContent = x.t;
+  $('newsBody').innerHTML = parts.length ? parts.map(function(p){ return '<p class="'+(p.li?'li':p.h?'h':'')+'">'+esc(p.t)+'</p>'; }).join('') : '<p>Ingen text i flödet för den här nyheten.</p>';
+  $('newsBody').scrollTop = 0;
+  $('newsScrim').classList.add('show');
+}
+function closeNews(){ $('newsScrim').classList.remove('show'); newsOpen = -1; }
+
 /* ===================== Interaktion ===================== */
 var dimIdx = null, pressTimer = null, longFired = false, unlockTimer = null;
 
@@ -1625,6 +1760,8 @@ document.addEventListener('click', function(e){
     case 'spsonos': sonosFavorite(t.dataset.id); break;
     case 'audout': setAudio(+t.dataset.i); break;
     case 'sprefresh': spDevices(); spPoll(); break;
+    case 'news': openNews(+t.dataset.i); break;
+    case 'newsclose': closeNews(); break;
     case 'caladd': openCalAdd(); break;
     case 'calday': calSel = t.dataset.d; renderCalDays(); break;
     case 'calnotime': calAllDay = true; tmSync(); break;
@@ -1705,7 +1842,8 @@ renderClock(); setInterval(renderClock, 10000);
 /* OLED: flytta hela ytan några pixlar var 3:e minut så att statiska delar inte bränns in */
 setInterval(function(){ var r = function(){ return Math.round(Math.random()*6-3); }; document.querySelector('.app').style.transform = 'translate('+r()+'px,'+r()+'px)'; }, 3*60*1000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
-loadCal(); setInterval(loadCal, 60*1000);
+loadNews(); setInterval(loadNews, 2*60*1000);   /* nyheter: var 2:a minut */
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) loadNews(); });
 hwPoll(); setInterval(hwPoll, 2000);
 audPoll(); setInterval(audPoll, 5000);
 spPoll(); setInterval(spPoll, 5000); spDevices(); setInterval(spDevices, 30000);
