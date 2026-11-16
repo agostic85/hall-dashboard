@@ -328,6 +328,12 @@ body{background:
 .phase i b,.pbar b,.sp-prog b{background:linear-gradient(90deg,var(--pink),var(--cyan))}
 .btn.primary,.rbtn.on,.rbtn.sp-play.on{background:linear-gradient(135deg,var(--pink),var(--cyan));border-color:transparent;color:#120612}
 .on .switch{background:linear-gradient(90deg,var(--pink),var(--cyan))}
+.printer .pl{display:flex;align-items:center;gap:.7rem;min-width:0}
+.pwr-ic{flex:none;width:3.4rem;height:3.4rem;border-radius:.9rem;display:grid;place-items:center;padding:0;background:#15181e;border:2px solid rgba(255,255,255,.06);transition:box-shadow .25s,border-color .25s}
+.pwr-ic svg{width:2.7rem;height:2.7rem;stroke:none;stroke-width:0;filter:grayscale(1) brightness(.6);opacity:.55;transition:filter .25s,opacity .25s}
+.pwr-ic.on{border-color:transparent;background:linear-gradient(#15181e,#15181e) padding-box,linear-gradient(135deg,var(--pink),var(--cyan)) border-box;box-shadow:0 0 1.1rem rgba(255,79,163,.3)}
+.pwr-ic.on svg{filter:none;opacity:1}
+.pwr-ic:active{transform:scale(.94)}
 .dim{background:linear-gradient(90deg,#2a1430,var(--pink))}
 /* === Datorn: CPU/GPU från LibreHardwareMonitor === */
 .hw{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
@@ -703,6 +709,12 @@ function $(id){ return document.getElementById(id); }
 function v(id, cap){ var s = state[id]; return s ? s[cap] : undefined; }
 function num(n, d){ if(n==null||isNaN(n)) return '–'; return Number(n).toLocaleString('sv-SE',{maximumFractionDigits:d==null?1:d, minimumFractionDigits:0}); }
 function icon(n){ return '<svg><use href="#i-'+n+'"/></svg>'; }
+var pwrArm = {};
+/* Ström-ikoner för skrivarna (egna generiska illustrationer) */
+var PICON = {
+  x2d: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><linearGradient id="xb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a505c"/><stop offset="1" stop-color="#23272f"/></linearGradient><linearGradient id="xg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b4d5e" stop-opacity=".95"/><stop offset="1" stop-color="#151b24" stop-opacity=".95"/></linearGradient><linearGradient id="xp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd166"/><stop offset="1" stop-color="#f08a24"/></linearGradient></defs><rect x="6" y="5" width="36" height="39" rx="3.5" fill="url(#xb)"/><rect x="6" y="5" width="36" height="7" rx="3.5" fill="#5b6270"/><rect x="8" y="7" width="32" height="3.2" rx="1.2" fill="#2a313c" opacity=".9"/><rect x="9.5" y="14" width="29" height="25.5" rx="1.6" fill="url(#xg)"/><rect x="12" y="17" width="24" height="1.4" rx=".7" fill="#7d8796"/><rect x="20" y="16" width="8" height="5.2" rx="1" fill="#d6dbe3"/><rect x="21.2" y="21.2" width="1.6" height="1.6" fill="#9aa3b1"/><rect x="25.2" y="21.2" width="1.6" height="1.6" fill="#9aa3b1"/><path d="M19.5 33h9l-1.5-7.5h-6z" fill="url(#xp)"/><rect x="12" y="33" width="24" height="2.2" rx=".6" fill="#8b929d"/><path d="M11 15.5l8 0-8 10z" fill="#fff" opacity=".10"/><rect x="21" y="41" width="6" height="1.4" rx=".7" fill="#22d3ee"/></svg>',
+  u1:  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><linearGradient id="ub" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9ecf1"/><stop offset="1" stop-color="#b9bfc9"/></linearGradient><linearGradient id="up" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ee8fa"/><stop offset="1" stop-color="#3a8dde"/></linearGradient></defs><rect x="6" y="4" width="36" height="34" rx="2.5" fill="#1c2129"/><rect x="6" y="4" width="36" height="34" rx="2.5" fill="none" stroke="#c6ccd5" stroke-width="2.4"/><rect x="9" y="7.5" width="5.6" height="5.2" rx="1" fill="#ff4fa3"/><rect x="16.2" y="7.5" width="5.6" height="5.2" rx="1" fill="#22d3ee"/><rect x="23.4" y="7.5" width="5.6" height="5.2" rx="1" fill="#ffd166"/><rect x="30.6" y="7.5" width="5.6" height="5.2" rx="1" fill="#f1f3f6"/><rect x="8" y="17" width="32" height="1.6" rx=".8" fill="#9aa3b1"/><rect x="20.5" y="15.6" width="7" height="5.6" rx="1" fill="#e9ecf1"/><rect x="23.2" y="21.2" width="1.6" height="1.8" fill="#9aa3b1"/><path d="M19 31h10l-1.4-6.2h-7.2z" fill="url(#up)"/><rect x="11" y="31" width="26" height="2.2" rx=".6" fill="#7d8592"/><rect x="5" y="37" width="38" height="7" rx="2.2" fill="url(#ub)"/><rect x="9" y="39" width="7" height="3" rx=".7" fill="#1c2129"/><rect x="10" y="39.8" width="5" height="1.4" rx=".4" fill="#22d3ee"/></svg>'
+};
 function toast(t){ var e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(function(){e.classList.remove('show');},2200); }
 
 function api(method, path, body, signal){
@@ -1129,7 +1141,8 @@ function remMinutes(t){ if(t==null) return null; if(typeof t==='number') return 
 function fmtRem(min){ if(min==null) return '–'; min=Math.round(min); var h=Math.floor(min/60), m=min%60; return h ? h+' h '+(m<10?'0':'')+m+' min' : m+' min'; }
 function fmtDone(min){ if(min==null) return ''; var d=new Date(Date.now()+min*60000); return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); }
 function printerBlock(p){
-  var h = '<div class="printer"><div class="row1"><span class="nm">'+p.nm+'</span><span class="stat '+p.st[0]+'">'+esc(p.st[1])+'</span></div>';
+  var pw = p.power ? '<button class="pwr-ic'+(p.power.on?' on':'')+'" data-act="pwr" data-id="'+p.power.id+'" data-run="'+(p.run?1:0)+'" title="Ström '+p.nm+': '+(p.power.on?'på':'av')+'">'+PICON[p.power.ic]+'</button>' : '';
+  var h = '<div class="printer"><div class="row1"><span class="pl">'+pw+'<span class="nm">'+p.nm+'</span></span><span class="stat '+p.st[0]+'">'+esc(p.st[1])+'</span></div>';
   if(p.run){
     var pct = Math.round(p.pct||0), rem = fmtRem(p.remMin), done = fmtDone(p.remMin);
     {
@@ -1138,7 +1151,7 @@ function printerBlock(p){
     }
   }
   h += '<div class="ptemps">'+p.temps.map(function(t){ return '<span>'+t[0]+' <b>'+t[1]+'°</b></span>'; }).join('')+'<span><b>'+p.w+'</b> W</span></div>';
-  if(p.lamp) h += '<button class="mode'+(p.lamp.on?' on':'')+'" data-act="onoff" data-id="'+p.lamp.id+'" data-cap="onoff.light_chamber" style="border:0;padding-bottom:0"><span>Kammarlampa</span><span class="switch"></span></button>';
+  if(p.lamp && (!p.power || p.power.on)) h += '<button class="mode'+(p.lamp.on?' on':'')+'" data-act="onoff" data-id="'+p.lamp.id+'" data-cap="onoff.light_chamber" style="border:0;padding-bottom:0"><span>Kammarlampa</span><span class="switch"></span></button>';
   return h + '</div>';
 }
 function renderPrinters(){
@@ -1148,14 +1161,14 @@ function renderPrinters(){
   var h = '<div class="head" style="margin-bottom:.2rem"><h2>'+icon('printer')+'3D-skrivare</h2></div>';
   h += printerBlock({nm:'Bambu X2D', st:xs, run:xRun, pct:pr, layers:String(v(x,'bambu_print_layers')||'').replace(/\s*\/\s*/,' / '), remMin:remMinutes(rem),
     temps:[['Munstycke',num(v(x,'measure_temperature.nozzle'),0)],['Bädd',num(v(x,'measure_temperature.bed'),0)],['Kammare',num(v(x,'measure_temperature.chamber'),0)]],
-    w:num(v(D.x2dPlug,'measure_power'),0), lamp:{on:!!v(x,'onoff.light_chamber'), id:x}});
+    w:num(v(D.x2dPlug,'measure_power'),0), power:{on:!!v(D.x2dPlug,'onoff'), id:D.x2dPlug, ic:'x2d'}, lamp:{on:!!v(x,'onoff.light_chamber'), id:x}});
   var u = D.u1, us = String(v(u,'printer_status')||''), up = v(u,'printer_job_progress')||0, eta = v(u,'printer_job_eta')||0;
   if(up>0 && up<=1) up = up*100;
   var map = {printing:['run','Skriver'], paused:['','Pausad'], idle:['','Ledig'], standby:['','Ledig'], ready:['','Ledig'], complete:['done','Klar'], completed:['done','Klar'], finished:['done','Klar'], error:['','Fel'], disconnected:['off','Frånkopplad']};
   var s2 = map[us.toLowerCase()] || ['', us||'–'];
   h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:'', remMin:eta>0?eta/60:null,
     temps:[['Hotend',num(v(u,'printer_hotend_temperature'),0)],['Bädd',num(v(u,'printer_bed_temperature'),0)],['Kammare',num(v(u,'measure_temperature.temperature_sensor_cavity'),0)]],
-    w:num(v(D.u1Plug,'measure_power'),0)});
+    w:num(v(D.u1Plug,'measure_power'),0), power:{on:!!v(D.u1Plug,'onoff'), id:D.u1Plug, ic:'u1'}});
   $('printers').innerHTML = h;
 }
 function renderSonos(){
@@ -1337,6 +1350,12 @@ document.addEventListener('click', function(e){
     case 'dimoff': CONFIG.lights[dimIdx].ids.forEach(function(id){ setCap(id,'onoff',false); }); closeDim(); break;
     case 'curtain': setCap(D.curtain,'windowcoverings_state',t.dataset.v); break;
     case 'onoff': setCap(t.dataset.id,t.dataset.cap,!v(t.dataset.id,t.dataset.cap)); break;
+    case 'pwr': {
+      var pid = t.dataset.id, pOn = !!v(pid,'onoff');
+      // Skydd: pågående utskrift kräver en andra tryckning inom 4 s för att bryta strömmen
+      if(pOn && t.dataset.run==='1' && !(pwrArm.id===pid && Date.now()-pwrArm.t<4000)){ pwrArm={id:pid,t:Date.now()}; toast('Skrivaren skriver – tryck igen för att bryta strömmen'); break; }
+      pwrArm={}; setCap(pid,'onoff',!pOn); break;
+    }
     case 'spkplay': setCap(t.dataset.id,'speaker_playing',!v(t.dataset.id,'speaker_playing')); break;
     case 'spkbtn': setCap(t.dataset.id,t.dataset.cap,true); break;
     case 'spsetup': $('spRedir').value = SP_REDIRECT; $('spCid').value = SP.clientId||''; $('spCode').value = ''; $('spScrim').classList.add('show'); break;
