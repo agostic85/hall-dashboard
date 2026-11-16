@@ -335,6 +335,10 @@ body{background:
 .pwr-ic.on svg{filter:none;opacity:1}
 .pwr-ic:active{transform:scale(.94)}
 .cbtn{height:3rem;padding:0 1.05rem 0 .75rem;border-radius:99px;display:inline-flex;align-items:center;gap:.4rem;font-size:1rem;font-weight:600;color:var(--text);background:linear-gradient(160deg,#232833,#1c2029);border:1px solid transparent}
+.scenes{display:flex;gap:.4rem;flex:none}
+.scenes .btn{padding:.6rem .85rem}
+.lights .head h2{white-space:nowrap}
+.btn.scene.cur{background:linear-gradient(160deg,#0e3b3d,#0a2628);border-color:transparent;color:var(--teal)}
 .cbtn.cur{background:linear-gradient(160deg,#0e3b3d,#0a2628);color:var(--teal)}
 .cbtn:active,.rbtn:active{transform:scale(.95)}
 .dim{background:linear-gradient(90deg,#2a1430,var(--pink))}
@@ -469,6 +473,8 @@ body.offline .off-chip{display:inline-flex}
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
     <symbol id="i-prev" viewBox="0 0 24 24"><path d="M18 5v14L8 12zM6 5v14"/></symbol>
     <symbol id="i-next" viewBox="0 0 24 24"><path d="M6 5v14l10-7zM18 5v14"/></symbol>
+    <symbol id="i-sofa" viewBox="0 0 24 24"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M2 13a2 2 0 0 1 4 0v2h12v-2a2 2 0 0 1 4 0v4H2z"/><path d="M5 17v2M19 17v2"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
     <symbol id="i-reload" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16"/><path d="M20 21v-5h-5"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
     <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
@@ -506,7 +512,11 @@ body.offline .off-chip{display:inline-flex}
       <div class="card lights">
         <div class="head">
           <h2><svg><use href="#i-bulb"/></svg>Kontoret <span class="sub" id="lightCount" style="text-transform:none;letter-spacing:0;font-weight:400"></span></h2>
-          <button class="btn" data-act="alloff" data-g="office"><svg><use href="#i-power"/></svg>Släck kontoret</button>
+          <div class="scenes" id="scenes">
+            <button class="btn scene" data-act="scene" data-s="lounge"><svg><use href="#i-sofa"/></svg>Lounge</button>
+            <button class="btn scene" data-act="scene" data-s="arbete"><svg><use href="#i-sun"/></svg>Arbete</button>
+            <button class="btn" data-act="alloff" data-g="office"><svg><use href="#i-power"/></svg>Släck</button>
+          </div>
         </div>
         <div class="tiles3" id="lights"></div>
       </div>
@@ -999,7 +1009,7 @@ function renderAlerts(){
 }
 
 function render(){
-  renderCar(); renderClimate(); renderLightGroups(); renderCurtain(); renderPrinters(); renderSpotify(); renderAlertsPC();
+  renderCar(); renderClimate(); renderLightGroups(); renderScenes(); renderCurtain(); renderPrinters(); renderSpotify(); renderAlertsPC();
   if(dimIdx!=null) syncDim();
 }
 
@@ -1108,6 +1118,51 @@ function drawChart(H, hs, mn, mx, lvl){
 window.addEventListener('resize', function(){ renderPrice(); });
 
 /* ===================== PC-vy ===================== */
+/* Ljusscener för kontoret. dim 0–1. Färglampor: hue/sat (0–1). Vita: temp (0 = kall, 1 = varm). */
+var SCENES = {
+  // Arbete = ljuset som det stod 16 nov 2026 kl 18:53
+  arbete: {
+    'cca492c8-f5ac-46fe-b275-c9db3cfd7c58': {dim:.43, temp:.61},            // Lampa kontor
+    'f2f8de16-8965-47cb-be65-c27a38a19df3': {dim:1,   hue:.13, sat:.79},    // Lampa hylla
+    '2dcac41c-ab20-4e31-9914-5489b739c08a': {dim:1,   hue:.69, sat:1},      // Skrivbord
+    '3832acad-a116-4f00-8683-8f1c12d4e3d9': {dim:1,   hue:.75, sat:1},      // Hue Play vänster
+    '3bb0b5d4-3f77-41b8-b2a5-da3e468ba7e5': {dim:1,   hue:.58, sat:1},      // Hue Play höger
+    '5d4ba947-1c4b-4e66-ba5f-624247bde98a': {dim:1,   temp:.61}             // Gradient tube
+  },
+  // Lounge = dämpat och varmt, färgerna kvar på Play/skrivbord
+  lounge: {
+    'cca492c8-f5ac-46fe-b275-c9db3cfd7c58': {dim:.12, temp:.95},
+    'f2f8de16-8965-47cb-be65-c27a38a19df3': {dim:.2,  hue:.08, sat:.85},
+    '2dcac41c-ab20-4e31-9914-5489b739c08a': {dim:.25, hue:.69, sat:1},
+    '3832acad-a116-4f00-8683-8f1c12d4e3d9': {dim:.35, hue:.83, sat:1},
+    '3bb0b5d4-3f77-41b8-b2a5-da3e468ba7e5': {dim:.35, hue:.58, sat:1},
+    '5d4ba947-1c4b-4e66-ba5f-624247bde98a': {dim:.3,  hue:.76, sat:.9}
+  }
+};
+function applyScene(name){
+  var sc = SCENES[name]; if(!sc) return;
+  Object.keys(sc).forEach(function(id, i){
+    var L = sc[id];
+    setTimeout(function(){              // lite luft mellan lamporna så Hue-bryggan hinner med
+      setCap(id,'onoff',true); setCap(id,'dim',L.dim);
+      if(L.temp!=null) setCap(id,'light_temperature',L.temp);
+      else { setCap(id,'light_hue',L.hue); setCap(id,'light_saturation',L.sat); }
+    }, i*150);
+  });
+  toast(name==='lounge' ? 'Lounge-läge' : 'Arbetsljus');
+}
+function currentScene(){
+  for(var n in SCENES){
+    var sc = SCENES[n], ok = true;
+    for(var id in sc){ if(!v(id,'onoff') || Math.abs((v(id,'dim')||0)-sc[id].dim) > .03){ ok=false; break; } }
+    if(ok) return n;
+  }
+  return null;
+}
+function renderScenes(){
+  var cur = currentScene();
+  document.querySelectorAll('#scenes .scene').forEach(function(b){ b.classList.toggle('cur', b.dataset.s===cur); });
+}
 function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function renderLightGroups(){
   var out = {office:'', bedroom:''}, cnt = {office:0, bedroom:0};
@@ -1351,6 +1406,7 @@ document.addEventListener('click', function(e){
   var act = t.dataset.act;
   switch(act){
     case 'light': toggleLight(+t.dataset.i); break;
+    case 'scene': applyScene(t.dataset.s); break;
     case 'alloff':
       CONFIG.lights.forEach(function(L){ if(t.dataset.g && L.group!==t.dataset.g) return; L.ids.forEach(function(id){ if(v(id,'onoff')) setCap(id,'onoff',false); }); });
       toast('Alla lampor släcks'); break;
