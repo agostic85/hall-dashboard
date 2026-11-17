@@ -1434,6 +1434,15 @@ function fmtMin(m){ m = Math.round(m); return m>=60 ? Math.floor(m/60)+' h '+(m%
 function remMinutes(t){ if(t==null) return null; if(typeof t==='number') return t; var h=/(\d+)\s*h/.exec(t), m=/(\d+)\s*m/.exec(t); if(!h && !m) return null; return (h?+h[1]*60:0)+(m?+m[1]:0); }
 function fmtRem(min){ if(min==null) return '–'; min=Math.round(min); var h=Math.floor(min/60), m=min%60; return h ? h+' h '+(m<10?'0':'')+m+' min' : m+' min'; }
 function fmtDone(min){ if(min==null) return ''; var d=new Date(Date.now()+min*60000); return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes(); }
+/* Tid kvar för U1. Homeys printer_job_eta (minuter) räknas på förfluten tid inkl. uppvärmning och
+   kalibrering och blir därför för hög. Finns slicerns tid i filnamnet (t.ex. "…_30m50s") används den:
+   slicertid × (1 − andel klar). Annars Homeys värde. */
+function u1Rem(u, pct, eta){
+  var m = /_(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(String(v(u,'printer_job_name')||'').replace(/\.g?code$/i,''));
+  var tot = m && (m[1]||m[2]||m[3]||m[4]) ? (+(m[1]||0))*1440 + (+(m[2]||0))*60 + (+(m[3]||0)) + (+(m[4]||0))/60 : 0;
+  if(tot > 0 && pct > 0) return Math.max(0, tot * (1 - pct/100));
+  return eta > 0 ? eta : null;
+}
 /* U1 har fyra verktyg – visa det varmaste (det aktiva), inte bara extruder 0 */
 function u1Hot(u){
   var t = ['printer_hotend_temperature','measure_temperature.extruder1','measure_temperature.extruder2','measure_temperature.extruder3']
@@ -1466,7 +1475,7 @@ function renderPrinters(){
   if(up>0 && up<=1) up = up*100;
   var map = {printing:['run','Skriver'], paused:['','Pausad'], idle:['','Ledig'], standby:['','Ledig'], ready:['','Ledig'], complete:['done','Klar'], completed:['done','Klar'], finished:['done','Klar'], error:['','Fel'], disconnected:['off','Frånkopplad']};
   var s2 = map[us.toLowerCase()] || ['', us||'–'];
-  h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:String(v(u,'printer_job_layer')||''), remMin:eta>0?eta:null,   /* printer_job_eta är i minuter */ job:String(v(u,'printer_job_name')||'').replace(/_/g,' '),
+  h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:String(v(u,'printer_job_layer')||''), remMin:u1Rem(u, up, eta), job:String(v(u,'printer_job_name')||'').replace(/_/g,' '),
     temps:[['Hotend',num(u1Hot(u),0)],['Bädd',num(v(u,'printer_bed_temperature'),0)],['Kammare',num(v(u,'measure_temperature.temperature_sensor_cavity'),0)]],
     w:num(v(D.u1Plug,'measure_power'),0), power:{on:!!v(D.u1Plug,'onoff'), id:D.u1Plug, ic:'u1'}});
   $('printers').innerHTML = h;
