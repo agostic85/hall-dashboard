@@ -782,6 +782,7 @@ CONFIG = {
   address: '', token: '', pollMs: 5000,
   calVar:    '752c7899-166f-4a3c-b474-3eeb5807ff15', // Homey-variabel kalender_vecka
   calNewVar: 'df3f83f2-d593-42cd-a898-68f80a8e4e8e', // Homey-variabel kalender_ny
+  u1Var:     '4326587a-6627-44d9-bd7c-c6aeffddfbfd', // Homey-variabel u1_status (flödet "Hall-dashboard: hämta U1-status (Moonraker)")
   nightFrom: 0, nightTo: 0,   // ingen nattdimning på datorn
   dev: {
     indoor:   '0426bba8-1bfb-4f8d-ad5b-33f24f4d48a1', // Netatmo inne (kontor)
@@ -1437,7 +1438,20 @@ function fmtDone(min){ if(min==null) return ''; var d=new Date(Date.now()+min*60
 /* Tid kvar för U1. Homeys printer_job_eta (minuter) räknas på förfluten tid inkl. uppvärmning och
    kalibrering och blir därför för hög. Finns slicerns tid i filnamnet (t.ex. "…_30m50s") används den:
    slicertid × (1 − andel klar). Annars Homeys värde. */
+var U1M = null;   /* senaste svaret från U1 (Moonraker) via Homey */
+function u1Fresh(){ return !!(U1M && !U1M.err && U1M.st === 'printing' && Date.now() - U1M.t < 3*60000); }
+function loadU1(){
+  if(DEMO || !CONFIG.u1Var) return;
+  api('GET','/manager/logic/variable/'+CONFIG.u1Var).then(function(x){
+    try{ U1M = JSON.parse(x.value || '{}'); }catch(e){ U1M = null; }
+    renderPrinters();
+  }).catch(function(){});
+}
 function u1Rem(u, pct, eta){
+  /* 1) Moonraker via Homey (samma uppskattning som Fluidd), räknas ner mellan uppdateringarna */
+  if(u1Fresh() && U1M.rem != null)
+    return Math.max(0, (U1M.rem - (Date.now() - U1M.t)/1000) / 60);
+  /* 2) slicertiden i filnamnet, 3) Homeys värde */
   var m = /_(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(String(v(u,'printer_job_name')||'').replace(/\.g?code$/i,''));
   var tot = m && (m[1]||m[2]||m[3]||m[4]) ? (+(m[1]||0))*1440 + (+(m[2]||0))*60 + (+(m[3]||0)) + (+(m[4]||0))/60 : 0;
   if(tot > 0 && pct > 0) return Math.max(0, tot * (1 - pct/100));
@@ -1473,6 +1487,7 @@ function renderPrinters(){
     w:num(v(D.x2dPlug,'measure_power'),0), power:{on:!!v(D.x2dPlug,'onoff'), id:D.x2dPlug, ic:'x2d'}});
   var u = D.u1, us = String(v(u,'printer_status')||''), up = v(u,'printer_job_progress')||0, eta = v(u,'printer_job_eta')||0;
   if(up>0 && up<=1) up = up*100;
+  if(u1Fresh() && U1M.p != null) up = U1M.p;   /* samma procent som Fluidd */
   var map = {printing:['run','Skriver'], paused:['','Pausad'], idle:['','Ledig'], standby:['','Ledig'], ready:['','Ledig'], complete:['done','Klar'], completed:['done','Klar'], finished:['done','Klar'], error:['','Fel'], disconnected:['off','Frånkopplad']};
   var s2 = map[us.toLowerCase()] || ['', us||'–'];
   h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:String(v(u,'printer_job_layer')||''), remMin:u1Rem(u, up, eta), job:String(v(u,'printer_job_name')||'').replace(/_/g,' '),
@@ -1906,6 +1921,7 @@ renderClock(); setInterval(renderClock, 10000);
 setInterval(function(){ var r = function(){ return Math.round(Math.random()*6-3); }; document.querySelector('.app').style.transform = 'translate('+r()+'px,'+r()+'px)'; }, 3*60*1000);
 render(); poll(); setInterval(poll, CONFIG.pollMs);
 loadNews(); setInterval(loadNews, 2*60*1000);   /* nyheter: var 2:a minut */
+loadU1(); setInterval(loadU1, 20*1000);   /* U1-status från Homey-variabeln (uppdateras varje minut) */
 document.addEventListener('visibilitychange', function(){ if(!document.hidden) loadNews(); });
 hwPoll(); setInterval(hwPoll, 2000);
 audPoll(); setInterval(audPoll, 5000);
