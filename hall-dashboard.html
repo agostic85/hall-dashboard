@@ -210,7 +210,7 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:va
 .lvl.low{background:#123a2a;color:var(--good)} .lvl.mid{background:#3a2c14;color:var(--warm)} .lvl.high{background:#3a1a1e;color:var(--bad)}
 .pstat{display:flex;flex-direction:column;gap:.05rem;font-size:.72rem;color:var(--muted);padding-left:.8rem;border-left:1px solid var(--line)}
 .pstat b{font-size:1rem;font-weight:600}
-.pstat.lo b{color:var(--good)} .pstat.hi b{color:var(--bad)}
+.pstat.low b{color:var(--good)} .pstat.mid b{color:var(--warm)} .pstat.high b{color:var(--bad)}
 #pchart{height:9.5rem;position:relative}
 #pchart svg{position:absolute;inset:0;width:100%;height:100%;stroke:none;fill:initial}
 #pchart text{font-size:11px;fill:var(--muted);font-family:inherit}
@@ -501,6 +501,9 @@ var CONFIG = {
   // elhandel: spot (tak 80 per kvart) + påslag 11 − lokalrabatt 3 + rörliga 5,63 = +13,63
   // elnät: överföring 6 + energiskatt 36 − norrlandsavdrag 9,6 = 32,4
   tariff: {cap:80, handel:13.63, nat:32.4, vat:1.25},
+  // Färggränser för totalpriset (öre/kWh). Fasta gränser i stället för jämförelse mot dagens timmar.
+  // null = tredjedelar av spannet som totalpriset kan ha med takpriset: 57,5–157,5 öre → 91 / 124 öre.
+  priceLevels: {low: null, high: null},
   appliances: [
     {name:'Diskmaskin',  id:'3c86166a-e849-44dc-be9f-f3c460fcc2d5', icon:'dish',   runW:5},
     {name:'Tvättmaskin', id:'a70e0b24-8530-4cf9-a1d1-fac8b56618f1', icon:'washer', runW:5}
@@ -1282,9 +1285,11 @@ function renderPrice(){
   var hs = new Date(); hs.setMinutes(0,0,0); hs = hs.getTime();
   var fut = H.filter(function(x){ return x.t>=hs; });
   if(!fut.length) fut = H;
-  var sorted = fut.map(function(x){ return x.p; }).sort(function(a,b){ return a-b; });
-  var q1 = sorted[Math.floor((sorted.length-1)/3)], q2 = sorted[Math.floor((sorted.length-1)*2/3)];
-  function lvl(p){ return p<=q1 ? 'low' : p<=q2 ? 'mid' : 'high'; }
+  /* Fasta nivåer: billigt/normalt/dyrt utifrån vad priset kan bli (spot 0 → takpris), inte dagens spridning */
+  var pMin = tot(0), pMax = tot(CONFIG.tariff.cap), PL = CONFIG.priceLevels || {};
+  var q1 = PL.low  != null ? PL.low  : pMin + (pMax - pMin)/3;
+  var q2 = PL.high != null ? PL.high : pMin + (pMax - pMin)*2/3;
+  function lvl(p){ return p < q1 ? 'low' : p <= q2 ? 'mid' : 'high'; }
   var mn = fut[0], mx = fut[0];
   fut.forEach(function(x){ if(x.p<mn.p) mn = x; if(x.p>mx.p) mx = x; });
   if(cur==null) cur = fut[0].p;
@@ -1293,11 +1298,11 @@ function renderPrice(){
   el.innerHTML = head +
     '<div class="price-top">'+
       '<div class="price-now"><span class="big">'+ore(cur)+'</span><span class="unit">öre</span><span class="lvl '+L+'">'+LT+' just nu</span></div>'+
-      '<div class="pstat lo">Lägst '+span(mn.t)+'<b>'+ore(mn.p)+' öre</b></div>'+
-      '<div class="pstat hi">Högst '+span(mx.t)+'<b>'+ore(mx.p)+' öre</b></div>'+
+      '<div class="pstat '+lvl(mn.p)+'">Lägst '+span(mn.t)+'<b>'+ore(mn.p)+' öre</b></div>'+
+      '<div class="pstat '+lvl(mx.p)+'">Högst '+span(mx.t)+'<b>'+ore(mx.p)+' öre</b></div>'+
     '</div>'+
     '<div id="pchart"></div>'+
-    '<div class="pnote">Grönt billigast · gult normalt · rött dyrast av kommande timmar'+(hasTomorrow ? '' : ' · morgondagens priser ca kl 13')+'</div>';
+    '<div class="pnote">Grönt under '+ore(q1)+' öre · gult '+ore(q1)+'–'+ore(q2)+' · rött över '+ore(q2)+' öre'+(hasTomorrow ? '' : ' · morgondagens priser ca kl 13')+'</div>';
   drawChart(hasTomorrow ? H.filter(function(x){ return x.t >= hs-2*3600000; }) : H, hs, mn, mx, lvl);
 }
 function drawChart(H, hs, mn, mx, lvl){
@@ -1319,7 +1324,7 @@ function drawChart(H, hs, mn, mx, lvl){
     }
     if(isCur) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(Hh-3)+'" text-anchor="middle" style="fill:#eef1f6;font-weight:600">nu</text>';
     else if(hr%3===0) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(Hh-3)+'" text-anchor="middle">'+('0'+hr).slice(-2)+'</text>';
-    if(x===mn || x===mx) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(yy-4).toFixed(1)+'" text-anchor="middle" style="fill:'+(x===mn?'#3ecf8e':'#ff6b6b')+';font-weight:600">'+ore(x.p)+'</text>';
+    if(x===mn || x===mx) s += '<text x="'+(xx+(bw-g)/2).toFixed(1)+'" y="'+(yy-4).toFixed(1)+'" text-anchor="middle" style="fill:'+col[lvl(x.p)]+';font-weight:600">'+ore(x.p)+'</text>';
   });
   var cy = (top+ch-capP/maxP*ch).toFixed(1);
   s += '<line x1="0" y1="'+cy+'" x2="'+W+'" y2="'+cy+'" stroke="#eef1f6" stroke-opacity=".55" stroke-width="1.2" stroke-dasharray="6 4"/>';
