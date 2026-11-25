@@ -1440,6 +1440,8 @@ function fmtDone(min){ if(min==null) return ''; var d=new Date(Date.now()+min*60
    slicertid × (1 − andel klar). Annars Homeys värde. */
 var U1M = null;   /* senaste svaret från U1 (Moonraker) via Homey */
 function u1Fresh(){ return !!(U1M && !U1M.err && U1M.st === 'printing' && Date.now() - U1M.t < 3*60000); }
+/* Färskt svar från Moonraker (oavsett status). Används före Homey-enheten, som ofta fastnar på "disconnected". */
+function u1Recent(){ return !!(U1M && U1M.t && Date.now() - U1M.t < 3*60000); }
 function loadU1(){
   if(DEMO || !CONFIG.u1Var) return;
   api('GET','/manager/logic/variable/'+CONFIG.u1Var).then(function(x){
@@ -1487,11 +1489,24 @@ function renderPrinters(){
     w:num(v(D.x2dPlug,'measure_power'),0), power:{on:!!v(D.x2dPlug,'onoff'), id:D.x2dPlug, ic:'x2d'}});
   var u = D.u1, us = String(v(u,'printer_status')||''), up = v(u,'printer_job_progress')||0, eta = v(u,'printer_job_eta')||0;
   if(up>0 && up<=1) up = up*100;
-  if(u1Fresh() && U1M.p != null) up = U1M.p;   /* samma procent som Fluidd */
-  var map = {printing:['run','Skriver'], paused:['','Pausad'], idle:['','Ledig'], standby:['','Ledig'], ready:['','Ledig'], complete:['done','Klar'], completed:['done','Klar'], finished:['done','Klar'], error:['','Fel'], disconnected:['off','Frånkopplad']};
+  /* Moonraker via Homey-flödet går först – Homey-appens enhet tappar anslutningen och återansluter inte själv */
+  var mk = u1Recent(), uJob = String(v(u,'printer_job_name')||''), uLay = String(v(u,'printer_job_layer')||''),
+      uHot = u1Hot(u), uBed = v(u,'printer_bed_temperature'), uCav = v(u,'measure_temperature.temperature_sensor_cavity');
+  if(mk){
+    us = U1M.err ? 'disconnected' : String(U1M.st || us);
+    if(!U1M.err){
+      if(U1M.p != null) up = U1M.p;   /* samma procent som Fluidd */
+      if(U1M.fn) uJob = U1M.fn.replace(/\.g?code$/i,'');
+      if(U1M.L) uLay = (U1M.l||0)+' / '+U1M.L;
+      if(U1M.h != null) uHot = U1M.h;
+      if(U1M.b != null) uBed = U1M.b;
+      if(U1M.c != null) uCav = U1M.c;
+    }
+  }
+  var map = {printing:['run','Skriver'], paused:['','Pausad'], idle:['','Ledig'], standby:['','Ledig'], ready:['','Ledig'], complete:['done','Klar'], completed:['done','Klar'], finished:['done','Klar'], error:['','Fel'], disconnected:['off','Frånkopplad'], cancelled:['','Avbruten']};
   var s2 = map[us.toLowerCase()] || ['', us||'–'];
-  h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:String(v(u,'printer_job_layer')||''), remMin:u1Rem(u, up, eta), job:String(v(u,'printer_job_name')||'').replace(/_/g,' '),
-    temps:[['Hotend',num(u1Hot(u),0)],['Bädd',num(v(u,'printer_bed_temperature'),0)],['Kammare',num(v(u,'measure_temperature.temperature_sensor_cavity'),0)]],
+  h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:uLay, remMin:u1Rem(u, up, eta), job:uJob.replace(/_/g,' '),
+    temps:[['Hotend',num(uHot,0)],['Bädd',num(uBed,0)],['Kammare',num(uCav,0)]],
     w:num(v(D.u1Plug,'measure_power'),0), power:{on:!!v(D.u1Plug,'onoff'), id:D.u1Plug, ic:'u1'}});
   $('printers').innerHTML = h;
   $('printers').classList.toggle('both', $('printers').querySelectorAll('.printer.run').length > 1);   /* båda skriver: lite tätare */
