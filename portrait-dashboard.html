@@ -632,7 +632,18 @@ html[data-dashboard="portrait"] .app { height:100dvh; min-height:0; }
 }
 [data-dashboard="portrait"] .col { display:contents; }
 [data-dashboard="portrait"] #news { min-height:0; order:1; }
-[data-dashboard="portrait"] #news .nw-feed { cursor:default; min-height:0; }
+[data-dashboard="portrait"] #news .nw-feed {
+  flex:1 1 0;
+  min-height:0;
+  cursor:default;
+  -webkit-mask-image:none;
+  mask-image:none;
+}
+[data-dashboard="portrait"] #news .nw-track {
+  position:absolute;
+  inset:0 0 auto;
+  will-change:auto;
+}
 [data-dashboard="portrait"] #hw .hw { grid-auto-rows:minmax(4rem,auto); }
 @media (max-width:840px) {
   [data-dashboard="touch"] main { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
@@ -1738,7 +1749,7 @@ function whenLbl(d){
 function renderNews(){
   var el = $('news'); if(!el) return;
   var head = '<div class="head"><h2>'+icon('news')+'Nyheter</h2><span class="legend"><span class="tag p4">P4</span><span class="tag ekot">EKOT</span><span class="tag usa">USA</span></span></div>';
-  if(!news){ el.innerHTML = head + '<div class="sub">'+(newsErr||'Hämtar nyheter…')+'</div>'; return; }
+  if(!news || !news.length){ el.innerHTML = head + '<div class="sub">'+(newsErr||(news ? 'Inga nyheter just nu' : 'Hämtar nyheter…'))+'</div>'; return; }
   var rows = news.map(function(x,i){
     return '<div class="nw-row"'+(portraitDashboard?'':' data-act="news" data-i="'+i+'"')+'><div class="nw-tm">'+whenLbl(x.d)+'</div><div class="nw-h"><b><span class="tag '+x.k+'">'+NEWS_LBL[x.k][0]+'</span>'+esc(x.t)+'</b>'+
       (x.s ? '<div class="nw-s">'+esc(x.s)+'</div>' : '')+'</div></div>';
@@ -1753,8 +1764,8 @@ function renderNews(){
     var fitNewsLoop = function(){
       if(!f.isConnected){ newsResize.disconnect(); return; }
       nLoop = group.offsetHeight;
-      if(!nLoop) return;
-      var copies = Math.ceil(f.clientHeight / nLoop);
+      if(!nLoop || !f.clientHeight) return;
+      var copies = Math.max(1, Math.ceil(f.clientHeight / nLoop));
       while(tr.childElementCount > copies + 1) tr.lastElementChild.remove();
       while(tr.childElementCount < copies + 1){
         var copy = group.cloneNode(true);
@@ -1766,6 +1777,7 @@ function renderNews(){
     var newsResize = new ResizeObserver(fitNewsLoop);
     newsResize.observe(f);
     newsResize.observe(group);
+    fitNewsLoop();
   } else if(tr.offsetHeight > f.clientHeight + 4){
     nLoop = tr.offsetHeight;
     tr.innerHTML += tr.innerHTML;
