@@ -1799,7 +1799,7 @@ setInterval(function(){
   var now = Date.now(), dt = Math.min(.5, (now - nTick)/1000); nTick = now;
   if(!news || nDrag || newsOpen>=0 || document.hidden || Date.now() < newsHold) return;
   if(!nLoop) return;
-  nOff += NEWS_SPEED*dt; nApply();
+  nOff += (portraitDashboard ? -NEWS_SPEED : NEWS_SPEED)*dt; nApply();
 }, 1000/NEWS_FPS);
 var newsHold = 0;
 function newsFeed(){ var el = $('news'); return el && el.querySelector('.nw-feed'); }
