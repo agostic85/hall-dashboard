@@ -1699,15 +1699,16 @@ var NEWS_SPEED = 7;    // pixlar per sekund
 var nOff = 0, nLoop = 0, nLast = 0, nDrag = null, nMoved = false;
 function nApply(){ var f = newsFeed(); if(!f || !f.firstChild) return;
   if(nLoop){ nOff = ((nOff % nLoop) + nLoop) % nLoop; } else nOff = 0;
-  f.firstChild.style.transform = 'translate3d(0,'+(-nOff).toFixed(2)+'px,0)'; }
-function nFrame(t){
-  requestAnimationFrame(nFrame);
-  var dt = nLast ? Math.min(.1, (t - nLast)/1000) : 0; nLast = t;
+  f.firstChild.style.transform = 'translate3d(0,'+(-Math.round(nOff))+'px,0)'; }
+/* Rullningen flyttas i hela pixlar med en timer (NEWS_FPS ggr/s) i stället för varje skärmuppdatering.
+   En rAF-loop som ritade om oavbrutet fick YouTube i samma Chrome att frysa när dashboarden syntes. */
+var NEWS_FPS = 10, nTick = Date.now();
+setInterval(function(){
+  var now = Date.now(), dt = Math.min(.5, (now - nTick)/1000); nTick = now;
   if(!news || nDrag || newsOpen>=0 || document.hidden || Date.now() < newsHold) return;
   if(!nLoop) return;
   nOff += NEWS_SPEED*dt; nApply();
-}
-requestAnimationFrame(nFrame);
+}, 1000/NEWS_FPS);
 var newsHold = 0;
 function newsFeed(){ var el = $('news'); return el && el.querySelector('.nw-feed'); }
 function newsWire(f){
