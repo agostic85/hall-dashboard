@@ -1,6 +1,6 @@
 {
-  "name": "Kontoret – Hall-dashboard",
-  "short_name": "Kontoret",
+  "name": "Touchscreen-dash",
+  "short_name": "Touchscreen-dash",
   "id": "./pc-dashboard.html",
   "start_url": "./touchscreen-dash.html",
   "scope": "./touchscreen-dash.html",
