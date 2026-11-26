@@ -2114,20 +2114,29 @@ if(DEMO){ setConn('demo','Demoläge'); for(var k=0;k<40;k++){ poll(); } }
 else setConn('', 'Ansluter…');
 var battlefieldCover = $('battlefield-cover');
 if(battlefieldCover){
-  var updateBattlefieldCover = function(){
+  var battlefieldCoverVersion = 0;
+  var showBattlefieldCover = function(url){
+    var version = ++battlefieldCoverVersion;
+    if(typeof url !== 'string' || url === battlefieldCover.getAttribute('src')) return;
     var cover = new Image();
     cover.referrerPolicy = 'no-referrer';
     cover.onload = function(){
-      battlefieldCover.src = cover.src;
+      if(version !== battlefieldCoverVersion && !battlefieldCover.hidden) return;
+      battlefieldCover.src = url;
       battlefieldCover.hidden = false;
     };
-    cover.onerror = function(){
-      if(!battlefieldCover.hidden) return;
-      cover.onerror = null;
-      cover.src = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2807960/c12d12ce3c7d217398d3fcad77427bfc9d57c570/header.jpg?t=1794834044';
-    };
-    cover.src = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2807960/header.jpg?v='+Math.floor(Date.now()/3600000);
+    cover.src = url;
   };
+  var updateBattlefieldCover = function(){
+    fetch('https://raw.githubusercontent.com/agostic85/hall-dashboard/main/battlefield-cover.json', {cache:'no-store'})
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(data){
+        var url = new URL(data.header_image);
+        if(url.protocol === 'https:' && url.hostname.endsWith('.steamstatic.com') &&
+           url.pathname.includes('/steam/apps/2807960/')) showBattlefieldCover(url.href);
+      }).catch(function(){});
+  };
+  showBattlefieldCover('https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2807960/c12d12ce3c7d217398d3fcad77427bfc9d57c570/header.jpg?t=1794834044');
   updateBattlefieldCover();
   setInterval(updateBattlefieldCover, 60*60*1000);
 }
