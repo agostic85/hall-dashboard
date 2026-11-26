@@ -701,6 +701,12 @@ html[data-dashboard] main { display:grid; align-items:start; }
   filter:none;
   opacity:1;
 }
+
+/* Behåll rullning på små skärmar, men dölj sidans rullister. */
+html[data-dashboard="touch"],
+html[data-dashboard="touch"] body { scrollbar-width:none; }
+html[data-dashboard="touch"]::-webkit-scrollbar,
+html[data-dashboard="touch"] body::-webkit-scrollbar { display:none; }
 </style>
 </head>
 <body>
