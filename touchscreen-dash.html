@@ -634,6 +634,53 @@ html[data-dashboard] main { display:grid; align-items:start; }
 @media (max-width:540px) {
   [data-dashboard="touch"] main { grid-template-columns:minmax(0,1fr); }
 }
+
+/* Stora tryckytor för pekskärmen. */
+[data-dashboard="touch"] main .btn,
+[data-dashboard="touch"] #curtain .cbtn,
+[data-dashboard="touch"] .sheet .acts .btn {
+  min-height:60px;
+  padding:9px 16px;
+  font-size:1.1rem;
+  justify-content:center;
+}
+[data-dashboard="touch"] .lights .head {
+  flex-wrap:wrap;
+  row-gap:8px;
+}
+[data-dashboard="touch"] .scenes {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  width:100%;
+  gap:7px;
+}
+[data-dashboard="touch"] .tiles3,
+[data-dashboard="touch"] .tiles4 { grid-auto-rows:76px; gap:7px; }
+[data-dashboard="touch"] :is(.tiles3,.tiles4) .nm {
+  font-size:1.12rem;
+  line-height:1.15;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+[data-dashboard="touch"] :is(.tiles3,.tiles4) .st { font-size:.92rem; }
+[data-dashboard="touch"] .curtain { flex-wrap:wrap; }
+[data-dashboard="touch"] .curtain .txt { min-width:5rem; }
+[data-dashboard="touch"] #curtain .seg { flex-wrap:wrap; }
+[data-dashboard="touch"] :is(.iconbtn,.rbtn),
+[data-dashboard="touch"] #spotify .sp-gear {
+  width:52px;
+  height:52px;
+  min-height:52px;
+  flex-shrink:0;
+}
+[data-dashboard="touch"] #climate .mode { min-height:64px; font-size:1.16rem; }
+[data-dashboard="touch"] #climate .switch { transform:scale(1.28); transform-origin:right center; margin-right:4px; }
+[data-dashboard="touch"] .printer-control .pwr-ic { width:65px; height:65px; flex-shrink:0; }
+[data-dashboard="touch"] .printer-control > span { font-size:1.12rem; }
+[data-dashboard="touch"] #spotify .sp-grid { grid-auto-rows:68px; gap:7px; }
+[data-dashboard="touch"] #spotify .sp-grid.c2 { grid-auto-rows:60px; }
+[data-dashboard="touch"] #spotify .sp-t.out { font-size:1.05rem; }
+[data-dashboard="touch"] #spotify .sp-t svg { width:1.75rem; height:1.75rem; }
 </style>
 </head>
 <body>
