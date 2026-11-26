@@ -709,41 +709,42 @@ html[data-dashboard="touch"]::-webkit-scrollbar,
 html[data-dashboard="touch"] body::-webkit-scrollbar { display:none; }
 
 [data-dashboard="touch"] #car:not(:has(button[data-act="carlock"])) { display:none; }
-.battlefield-controls {
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:7px;
+.battlefield-controls .game-actions {
+  display:flex;
+  flex-wrap:wrap;
+  gap:.85rem;
 }
-[data-dashboard="touch"] main .battlefield-controls .btn {
-  position:relative;
+.battlefield-controls .game-action {
   display:grid;
-  place-items:center;
-  min-height:86px;
-  padding:0;
-  overflow:hidden;
-  border-radius:1.1rem;
-  border:3px solid rgba(255,255,255,.06);
-  background:#15181e;
+  justify-items:center;
+  gap:.35rem;
   color:var(--text);
   text-decoration:none;
+  font-size:.95rem;
+  font-weight:600;
 }
-.game-launch img {
+.battlefield-controls .pwr-ic { position:relative; overflow:hidden; }
+.battlefield-controls .pwr-ic svg {
+  position:relative;
+  width:2.1rem;
+  height:2.1rem;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.7;
+  filter:none;
+  opacity:1;
+}
+.battlefield-controls .game-launch { color:var(--cyan); }
+.battlefield-controls .game-launch img {
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
   object-fit:cover;
+  opacity:.55;
 }
-.game-launch img[hidden] { display:none; }
-.game-launch span {
-  position:relative;
-  z-index:1;
-  padding:.3rem .5rem;
-  background:rgba(0,0,0,.65);
-  border-radius:.35rem;
-}
-.battlefield-controls .game-stop svg { width:2rem; height:2rem; }
-.battlefield-controls a:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
+.battlefield-controls .game-launch img[hidden] { display:none; }
+.battlefield-controls a:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; }
 </style>
 </head>
 <body>
@@ -808,11 +809,20 @@ html[data-dashboard="touch"] body::-webkit-scrollbar { display:none; }
       <div class="card" id="hw"></div>
       <div class="card" id="climate"></div>
       <div class="card battlefield-controls">
-        <a class="btn game-launch" href="steam://rungameid/2807960" aria-label="Starta Battlefield 6 i Steam" title="Starta Battlefield 6">
-          <img id="battlefield-cover" alt="" referrerpolicy="no-referrer" hidden>
-          <span>Starta BF6</span>
-        </a>
-        <a class="btn game-stop" href="kontoret-battlefield-close://close" aria-label="Avsluta Battlefield 6"><svg aria-hidden="true"><use href="#i-stop"/></svg></a>
+        <div class="head"><h2>Battlefield 6</h2></div>
+        <div class="game-actions printer-control">
+          <a class="game-action game-launch" href="steam://rungameid/2807960" aria-label="Starta Battlefield 6 i Steam">
+            <span class="pwr-ic">
+              <img id="battlefield-cover" alt="" referrerpolicy="no-referrer" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5l12 7-12 7z"/></svg>
+            </span>
+            <span>Starta</span>
+          </a>
+          <a class="game-action" href="kontoret-battlefield-close://close" aria-label="Avsluta Battlefield 6">
+            <span class="pwr-ic"><svg aria-hidden="true"><use href="#i-stop"/></svg></span>
+            <span>Avsluta</span>
+          </a>
+        </div>
       </div>
     </section>
 
