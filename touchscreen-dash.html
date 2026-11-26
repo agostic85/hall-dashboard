@@ -663,13 +663,17 @@ html[data-dashboard] main { display:grid; align-items:start; }
 [data-dashboard="touch"] :is(#lights,#lights2) .tile {
   min-height:60px;
 }
-[data-dashboard="touch"] :is(.tiles3,.tiles4) .nm {
-  font-size:1.12rem;
-  line-height:1.15;
+[data-dashboard="touch"] :is(#lights,#lights2) .tile .nm {
+  font-size:17px;
+  line-height:1.1;
   white-space:normal;
   overflow-wrap:anywhere;
 }
-[data-dashboard="touch"] :is(.tiles3,.tiles4) .st { font-size:.92rem; }
+[data-dashboard="touch"] :is(#lights,#lights2) .tile .st {
+  font-size:14px;
+  line-height:1.15;
+  margin-top:2px;
+}
 [data-dashboard="touch"] .curtain { flex-wrap:wrap; }
 [data-dashboard="touch"] .curtain .txt { min-width:5rem; }
 [data-dashboard="touch"] #curtain .seg { flex-wrap:wrap; }
