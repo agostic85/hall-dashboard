@@ -3,7 +3,7 @@
   "short_name": "Porträtt",
   "id": "./portrait-dashboard.html",
   "start_url": "./portrait-dashboard.html",
-  "scope": "./",
+  "scope": "./portrait-dashboard.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

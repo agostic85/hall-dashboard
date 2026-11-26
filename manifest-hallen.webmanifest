@@ -3,7 +3,7 @@
   "short_name": "Hallen",
   "id": "./hall-dashboard.html",
   "start_url": "./hall-dashboard.html",
-  "scope": "./",
+  "scope": "./hall-dashboard.html",
   "display": "standalone",
   "background_color": "#0d1015",
   "theme_color": "#0d1015",
