@@ -693,6 +693,14 @@ html[data-dashboard] main { display:grid; align-items:start; }
 [data-dashboard="touch"] #spotify .sp-grid.c2 { grid-auto-rows:60px; }
 [data-dashboard="touch"] #spotify .sp-t.out { font-size:1.05rem; }
 [data-dashboard="touch"] #spotify .sp-t svg { width:1.75rem; height:1.75rem; }
+[data-dashboard="touch"] #pc-power .pwr-ic svg {
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.6;
+  stroke-linecap:round;
+  filter:none;
+  opacity:1;
+}
 </style>
 </head>
 <body>
@@ -783,6 +791,15 @@ html[data-dashboard] main { display:grid; align-items:start; }
 
     <section class="col col-right">
       <div class="card" id="printers"></div>
+      <div class="card" id="pc-power">
+        <div class="head"><h2>Monstret</h2></div>
+        <div class="printer-control">
+          <button class="pwr-ic" data-act="pcshutdown" aria-label="Stäng av datorn" title="Stäng av datorn">
+            <svg aria-hidden="true"><use href="#i-power"/></svg>
+          </button>
+          <span>Stäng av datorn</span>
+        </div>
+      </div>
       <div class="card" id="spotify" style="flex:1"></div>
     </section>
   </main>
@@ -1923,6 +1940,9 @@ document.addEventListener('click', function(e){
     case 'dimoff': CONFIG.lights[dimIdx].ids.forEach(function(id){ setCap(id,'onoff',false); }); closeDim(); break;
     case 'curtain': setCap(D.curtain,'windowcoverings_state',t.dataset.v); break;
     case 'onoff': setCap(t.dataset.id,t.dataset.cap,!v(t.dataset.id,t.dataset.cap)); break;
+    case 'pcshutdown':
+      location.href = 'kontoret-monstret-power://shutdown';
+      break;
     case 'pwr': {
       var pid = t.dataset.id, pOn = !!v(pid,'onoff');
       // Skydd: pågående utskrift kräver en andra tryckning inom 4 s för att bryta strömmen
