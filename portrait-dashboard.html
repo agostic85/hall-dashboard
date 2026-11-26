@@ -15,7 +15,7 @@ const portraitDashboard = document.documentElement.dataset.dashboard === 'portra
   if (location.protocol !== 'https:') return;
   var h = document.head;
   function add(rel, href, attrs){ var l=document.createElement('link'); l.rel=rel; l.href=href; for(var k in (attrs||{})) l.setAttribute(k, attrs[k]); h.appendChild(l); }
-  add('manifest', 'manifest.webmanifest');
+  add('manifest', 'manifest-portrait.webmanifest');
   add('icon', 'icon-192.png', {sizes:'192x192', type:'image/png'});
   add('apple-touch-icon', 'apple-touch-icon.png');
   var m=document.createElement('meta'); m.name='apple-mobile-web-app-capable'; m.content='yes'; h.appendChild(m);
@@ -631,9 +631,33 @@ html[data-dashboard="portrait"] .app { height:100dvh; min-height:0; }
   align-items:stretch;
 }
 [data-dashboard="portrait"] .col { display:contents; }
-[data-dashboard="portrait"] #news { min-height:0; order:1; align-self:stretch; }
+[data-dashboard="portrait"] #news { order:1; align-self:start; max-height:100%; min-height:0; }
+[data-dashboard="portrait"] #news .nw-row { height:3rem; align-items:center; padding-block:.25rem; }
+[data-dashboard="portrait"] #news .nw-h b { -webkit-line-clamp:1; }
+[data-dashboard="portrait"] #news .nw-gap { height:0; }
+[data-dashboard="portrait"] .climate-metrics {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));
+  gap:.45rem;
+  margin:.5rem 0;
+}
+[data-dashboard="portrait"] .climate-metric {
+  min-width:0;
+  padding:.4rem .6rem;
+  border-radius:.65rem;
+  background:var(--card2);
+}
+[data-dashboard="portrait"] .climate-metric span { display:block; color:var(--muted); font-size:.9rem; }
+[data-dashboard="portrait"] .climate-metric b { font-size:1.65rem; font-weight:600; white-space:nowrap; }
+[data-dashboard="portrait"] .climate-metric small { font-size:.78rem; font-weight:400; }
+[data-dashboard="portrait"] #printers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:1rem; }
+[data-dashboard="portrait"] #printers > .head { grid-column:1 / -1; }
+[data-dashboard="portrait"] #printers .printer { min-width:0; border:0; padding:.5rem 0 0; }
+@media (max-width:540px) {
+  [data-dashboard="portrait"] #printers { grid-template-columns:1fr; }
+}
 [data-dashboard="portrait"] #news .nw-feed {
-  flex:1 1 0;
+  flex:0 1 15rem;
   min-height:0;
   cursor:default;
   -webkit-mask-image:none;
@@ -1479,8 +1503,17 @@ function renderClimate(){
   var pon = !!v(D.purifier,'onoff'), pw = v(D.purifier,'measure_power');
   $('climate').innerHTML = '<div class="head"><h2>'+icon('therm')+'Inomhusklimat kontor</h2><button class="iconbtn'+(reloading?' spin':'')+'" id="reload" aria-label="Uppdatera dashboarden" title="Uppdatera dashboarden">'+icon('reload')+'</button></div>'+
     '<div class="clim1"><span class="big '+cc+'">'+num(co2,0)+'</span><span class="unit">ppm</span><span class="lvl '+(cc==='co2-good'?'low':cc==='co2-ok'?'mid':cc?'high':'')+'">'+ct+'</span>'+
-      '<span class="cv"><b>'+num(officeTemp())+'°</b><b>'+num(officeHum(),0)+' %</b></span></div>'+
-    '<div class="clim2"><span>Ljud <b>'+num(nok ? v(n,'measure_noise') : null,0)+' dB</b></span><span>PM2,5 <b>'+num(v(w,'measure_pm25'),0)+'</b></span><span>VOC <b>'+num(v(w,'measure_voc'),0)+'</b></span><span>Tryck <b>'+num(nok ? v(n,'measure_pressure') : null,0)+'</b></span></div>'+
+      (portraitDashboard ? '' : '<span class="cv"><b>'+num(officeTemp())+'°</b><b>'+num(officeHum(),0)+' %</b></span>')+'</div>'+
+    (portraitDashboard ? '<div class="climate-metrics">'+[
+      ['Temperatur', num(officeTemp()), '°C'],
+      ['Luftfuktighet', num(officeHum(),0), '%'],
+      ['Ljud', num(nok ? v(n,'measure_noise') : null,0), 'dB'],
+      ['PM2,5', num(v(w,'measure_pm25'),0), 'µg/m³'],
+      ['VOC', num(v(w,'measure_voc'),0), ''],
+      ['Lufttryck', num(nok ? v(n,'measure_pressure') : null,0), 'hPa']
+    ].map(function(metric){
+      return '<div class="climate-metric"><span>'+metric[0]+'</span><b>'+metric[1]+' <small>'+metric[2]+'</small></b></div>';
+    }).join('')+'</div>' : '<div class="clim2"><span>Ljud <b>'+num(nok ? v(n,'measure_noise') : null,0)+' dB</b></span><span>PM2,5 <b>'+num(v(w,'measure_pm25'),0)+'</b></span><span>VOC <b>'+num(v(w,'measure_voc'),0)+'</b></span><span>Tryck <b>'+num(nok ? v(n,'measure_pressure') : null,0)+'</b></span></div>')+
     (portraitDashboard ? '<div class="sub">Luftrenare · '+(pon?'På':'Av')+(pon&&pw!=null?' · '+num(pw,0)+' W':'')+'</div>' : '<button class="mode'+(pon?' on':'')+'" data-act="onoff" data-id="'+D.purifier+'" data-cap="onoff" style="margin-top:.35rem;border:0;padding-bottom:0"><span>Luftrenare</span><span class="switch"></span></button>');
 }
 function fmtMin(m){ m = Math.round(m); return m>=60 ? Math.floor(m/60)+' h '+(m%60)+' min' : m+' min'; }
