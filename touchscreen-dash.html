@@ -655,7 +655,11 @@ html[data-dashboard] main { display:grid; align-items:start; }
   gap:7px;
 }
 [data-dashboard="touch"] .tiles3,
-[data-dashboard="touch"] .tiles4 { grid-auto-rows:76px; gap:7px; }
+[data-dashboard="touch"] .tiles4 {
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-auto-rows:60px;
+  gap:7px;
+}
 [data-dashboard="touch"] :is(.tiles3,.tiles4) .nm {
   font-size:1.12rem;
   line-height:1.15;
@@ -675,7 +679,8 @@ html[data-dashboard] main { display:grid; align-items:start; }
 }
 [data-dashboard="touch"] #climate .mode { min-height:64px; font-size:1.16rem; }
 [data-dashboard="touch"] #climate .switch { transform:scale(1.28); transform-origin:right center; margin-right:4px; }
-[data-dashboard="touch"] .printer-control .pwr-ic { width:65px; height:65px; flex-shrink:0; }
+[data-dashboard="touch"] .printer-control .pwr-ic { width:86px; height:86px; flex-shrink:0; }
+[data-dashboard="touch"] .printer-control .pwr-ic svg { width:3.5rem; height:3.5rem; }
 [data-dashboard="touch"] .printer-control > span { font-size:1.12rem; }
 [data-dashboard="touch"] #spotify .sp-grid { grid-auto-rows:68px; gap:7px; }
 [data-dashboard="touch"] #spotify .sp-grid.c2 { grid-auto-rows:60px; }
