@@ -1,0 +1,42 @@
+name: Uppdatera Battlefield 6-omslaget
+
+on:
+  schedule:
+    - cron: '23 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: battlefield-cover
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hämta omslagsadressen från Steam
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import urlparse
+          from urllib.request import urlopen
+
+          with urlopen('https://store.steampowered.com/api/appdetails?appids=2807960', timeout=30) as response:
+              image = json.load(response)['2807960']['data']['header_image']
+          url = urlparse(image)
+          if url.scheme != 'https' or not (url.hostname or '').endswith('.steamstatic.com') or '/steam/apps/2807960/' not in url.path:
+              raise ValueError('Unexpected Steam image URL')
+          with urlopen(image, timeout=30) as response:
+              if not response.headers.get_content_type().startswith('image/'):
+                  raise ValueError('Steam cover response is not an image')
+          Path('battlefield-cover.json').write_text(json.dumps({'header_image': image}, indent=2) + '\n', encoding='utf-8')
+          PY
+      - name: Publicera när omslagsadressen ändras
+        run: |
+          git add battlefield-cover.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Uppdatera Battlefield 6-omslaget'
+          git push
