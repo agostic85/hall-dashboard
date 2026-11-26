@@ -709,6 +709,26 @@ html[data-dashboard="touch"]::-webkit-scrollbar,
 html[data-dashboard="touch"] body::-webkit-scrollbar { display:none; }
 
 [data-dashboard="touch"] #car:not(:has(button[data-act="carlock"])) { display:none; }
+.battlefield-controls {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+}
+[data-dashboard="touch"] main .battlefield-controls .game-launch { padding:0; }
+.battlefield-controls .game-stop { text-decoration:none; color:inherit; }
+.game-launch {
+  display:grid;
+  place-items:center;
+  min-height:60px;
+  padding:0;
+  text-decoration:none;
+  color:var(--text);
+  font-weight:600;
+}
+.game-launch img { width:100%; height:100%; max-height:90px; object-fit:cover; display:block; border-radius:inherit; }
+.game-launch img[hidden] { display:none; }
+.game-launch img:not([hidden]) + span { position:absolute; clip-path:inset(50%); }
+.game-launch:focus-visible { outline:2px solid var(--cyan); outline-offset:2px; }
 </style>
 </head>
 <body>
@@ -772,6 +792,13 @@ html[data-dashboard="touch"] body::-webkit-scrollbar { display:none; }
       <div class="card car" id="car"></div>
       <div class="card" id="hw"></div>
       <div class="card" id="climate"></div>
+      <div class="card battlefield-controls">
+        <a class="btn game-launch" href="steam://rungameid/2807960" aria-label="Starta Battlefield 6 i Steam" title="Starta Battlefield 6">
+          <img id="battlefield-cover" alt="" referrerpolicy="no-referrer" hidden>
+          <span>Starta</span>
+        </a>
+        <a class="btn game-stop" href="kontoret-battlefield-close://close" aria-label="Avsluta Battlefield 6"><svg aria-hidden="true"><use href="#i-stop"/></svg>Avsluta</a>
+      </div>
     </section>
 
     <section class="col col-mid">
@@ -811,6 +838,7 @@ html[data-dashboard="touch"] body::-webkit-scrollbar { display:none; }
         </div>
       </div>
       <div class="card" id="spotify" style="flex:1"></div>
+
     </section>
   </main>
 </div>
@@ -2059,6 +2087,25 @@ function renderHW(){
 /* ===================== Start ===================== */
 if(DEMO){ setConn('demo','Demoläge'); for(var k=0;k<40;k++){ poll(); } }
 else setConn('', 'Ansluter…');
+var battlefieldCover = $('battlefield-cover');
+if(battlefieldCover){
+  var updateBattlefieldCover = function(){
+    var cover = new Image();
+    cover.referrerPolicy = 'no-referrer';
+    cover.onload = function(){
+      battlefieldCover.src = cover.src;
+      battlefieldCover.hidden = false;
+    };
+    cover.onerror = function(){
+      if(!battlefieldCover.hidden) return;
+      cover.onerror = null;
+      cover.src = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2807960/c12d12ce3c7d217398d3fcad77427bfc9d57c570/header.jpg?t=1794834044';
+    };
+    cover.src = 'https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2807960/header.jpg?v='+Math.floor(Date.now()/3600000);
+  };
+  updateBattlefieldCover();
+  setInterval(updateBattlefieldCover, 60*60*1000);
+}
 renderClock(); setInterval(renderClock, 10000);
 /* OLED: flytta hela ytan några pixlar var 3:e minut så att statiska delar inte bränns in */
 setInterval(function(){ var r = function(){ return Math.round(Math.random()*6-3); }; document.querySelector('.app').style.transform = 'translate('+r()+'px,'+r()+'px)'; }, 3*60*1000);
