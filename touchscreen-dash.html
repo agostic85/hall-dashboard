@@ -707,6 +707,8 @@ html[data-dashboard="touch"],
 html[data-dashboard="touch"] body { scrollbar-width:none; }
 html[data-dashboard="touch"]::-webkit-scrollbar,
 html[data-dashboard="touch"] body::-webkit-scrollbar { display:none; }
+
+[data-dashboard="touch"] #car:not(:has(button[data-act="carlock"])) { display:none; }
 </style>
 </head>
 <body>
@@ -1196,7 +1198,7 @@ function renderCar(){
         '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span><span class="sub car-st" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+status+'</span></div>'+
         '<div class="sub car-age" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr)))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
       '</div>'+
-      (portraitDashboard ? '' : '<button class="btn car-pre'+(clim?' active':'')+'" data-act="climate">'+icon('fire')+(clim?'Förvärmer':'Förvärm')+'</button>')+
+      (!portraitDashboard ? '' : '<button class="btn car-pre'+(clim?' active':'')+'" data-act="climate">'+icon('fire')+(clim?'Förvärmer':'Förvärm')+'</button>')+
     '</div>';
 }
 
