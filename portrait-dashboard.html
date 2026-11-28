@@ -759,7 +759,7 @@ body.night #wxfx{opacity:.5}
 .mw-dd { display:flex; gap:.55rem; font-size:.82rem; font-weight:600; }
 .mw-up { color:var(--good); } .mw-dn { color:var(--bad); } .mw-eq { color:var(--faint); }
 .mw-rows { margin-top:.55rem; display:flex; flex-direction:column; }
-.mw-r { display:grid; grid-template-columns:minmax(0,1fr) 5.6rem 6rem 5.2rem; gap:.5rem; align-items:baseline; padding:.4rem 0; border-top:1px solid var(--line); font-size:1.15rem; }
+.mw-r { display:grid; grid-template-columns:minmax(0,1fr) 4.9rem 4.9rem 5.6rem 4.9rem; gap:.4rem; align-items:baseline; padding:.4rem 0; border-top:1px solid var(--line); font-size:1.15rem; }
 .mw-h { border-top:0; color:var(--muted); font-size:.92rem; padding-top:0; }
 .mw-n { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .mw-c { text-align:right; white-space:nowrap; }
@@ -2272,14 +2272,14 @@ function renderMW(){
   var rows = (MW.models||[]).slice(0,4).map(function(m){
     var nm = MW_NAMES[m.id] || m.title;
     return '<div class="mw-r"><span class="mw-n">'+esc(nm)+'</span>'+
-      ['dl','coll','like'].map(function(k){ return '<span class="mw-c"><b>'+num(m.v[k],0)+'</b>'+mwD(m.d7[k])+'</span>'; }).join('')+'</div>';
+      ['dl','print','coll','like'].map(function(k){ return '<span class="mw-c"><b>'+num(m.v[k],0)+'</b>'+mwD(m.d7[k])+'</span>'; }).join('')+'</div>';
   }).join('');
   var foot = MWerr ? '<span class="mw-dn">Tjänsten svarar inte – visar senaste data</span>'
            : MW.err ? '<span class="mw-dn">Senaste hämtningen misslyckades</span>'
            : 'Uppdaterad '+mwTime(MW.ts);
   if(MW.partial7) foot += ' · trender sedan '+svShort(MW.since7);
   el.innerHTML = head + '<div class="mw-grid">'+tiles+'</div>'+
-    '<div class="mw-rows"><div class="mw-r mw-h"><span class="mw-n">Modell · 7 d</span><span class="mw-c">Nedl.</span><span class="mw-c">Sparade</span><span class="mw-c">Gilla</span></div>'+rows+'</div>'+
+    '<div class="mw-rows"><div class="mw-r mw-h"><span class="mw-n">Modell · 7 d</span><span class="mw-c">Nedl.</span><span class="mw-c">Utskr.</span><span class="mw-c">Sparade</span><span class="mw-c">Gilla</span></div>'+rows+'</div>'+
     '<div class="mw-foot">'+foot+'</div>';
 }
 function svShort(ms){ var d = new Date(ms); return d.getDate()+' '+['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]+' '+mwTime(ms); }
