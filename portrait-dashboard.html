@@ -775,7 +775,6 @@ body.night #wxfx{opacity:.5}
 #ints .head { margin-bottom:.35rem; }
 .int-list { flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
 .int-row { display:grid; grid-template-columns:3.6rem minmax(0,1fr); gap:.55rem; align-items:start; padding:.45rem 0; border-top:1px solid var(--line); }
-.int-row:first-child { border-top:0; padding-top:.1rem; }
 .int-tag { justify-self:start; font-size:.7rem; font-weight:700; padding:.15rem .45rem; border-radius:.4rem; background:rgba(255,255,255,.08); color:var(--muted); margin-top:.15rem; }
 .int-tag.i3d { background:rgba(62,207,142,.15); color:var(--good); }
 .int-tag.iev { background:rgba(90,169,255,.15); color:var(--blue); }
@@ -783,8 +782,16 @@ body.night #wxfx{opacity:.5}
 .int-tag.ipc { background:rgba(255,79,163,.15); color:var(--pink); }
 .int-tag.iljud { background:rgba(246,184,75,.15); color:var(--warm); }
 .int-tag.iph { background:rgba(255,138,92,.15); color:var(--coral); }
-.int-t { font-size:1.02rem; font-weight:600; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.int-t { font-size:1.12rem; font-weight:600; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .int-s { font-size:.78rem; color:var(--muted); margin-top:.1rem; }
+/* === 5 synliga rader i nyheter och intressen, raderna delar höjden lika === */
+[data-dashboard="portrait"] #news .nw-row { height:var(--rowH,3rem); overflow:hidden; align-items:center; padding-block:.35rem; box-sizing:border-box; }
+[data-dashboard="portrait"] #news .nw-h b { -webkit-line-clamp:2; }
+[data-dashboard="portrait"] #news .nw-s { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.int-feed { flex:1; min-height:0; position:relative; overflow:hidden; }
+.int-track { position:absolute; inset:0 0 auto; }
+.int-feed .int-row { height:var(--rowH,3rem); box-sizing:border-box; overflow:hidden; align-items:center; padding:.35rem 0; border-top:1px solid var(--line); }
+.int-feed .int-row:first-child { padding-top:.35rem; }
 </style>
 </head>
 <body>
@@ -1949,6 +1956,7 @@ function renderNews(){
     tr.replaceChildren(group);
     var fitNewsLoop = function(){
       if(!f.isConnected){ newsResize.disconnect(); return; }
+      if(f.clientHeight) f.style.setProperty('--rowH', (f.clientHeight/5)+'px');   /* alltid 5 nyheter synliga */
       nLoop = group.offsetHeight;
       if(!nLoop || !f.clientHeight) return;
       var copies = Math.max(1, Math.ceil(f.clientHeight / nLoop));
@@ -2199,18 +2207,42 @@ function loadInts(){
   fetch(INT_URL+'?t='+Math.floor(Date.now()/600000), {cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
     .then(function(j){ INTS = j; INTerr = ''; renderInts(); }).catch(function(e){ INTerr = e.message; renderInts(); });
 }
+var iOff = 0, iLoop = 0;
 function renderInts(){
   var el = $('ints'); if(!el) return;
   var h = '<div class="head"><h2>'+icon('spark')+'MINA INTRESSEN</h2></div>';
   if(!INTS){ el.innerHTML = h + '<div class="sub">'+(INTerr ? 'Kunde inte hämta ('+esc(INTerr)+')' : 'Hämtar…')+'</div>'; return; }
   var it = (INTS.items||[]);
   if(!it.length){ el.innerHTML = h + '<div class="sub">Inga nya träffar de senaste dagarna.</div>'; return; }
-  el.innerHTML = h + '<div class="int-list">' + it.slice(0,12).map(function(x){
+  var rows = it.slice(0,20).map(function(x){
     var am = Math.max(0, Math.round((Date.now()-x.ts)/60000));
     return '<div class="int-row"><span class="int-tag '+(INT_CLS[x.c]||'')+'">'+esc(x.c)+'</span>'+
       '<div class="int-b"><div class="int-t">'+esc(x.t)+'</div><div class="int-s">'+esc(x.s)+' · '+agoTxt(am)+'</div></div></div>';
-  }).join('') + '</div>';
+  }).join('');
+  el.innerHTML = h + '<div class="int-feed"><div class="int-track"><div class="int-grp">'+rows+'</div></div></div>';
+  var f = el.querySelector('.int-feed'), tr = f.firstChild, grp = tr.firstChild, scroll = it.length > 5;
+  iOff = 0; iLoop = 0;
+  var fit = function(){
+    if(!f.isConnected){ ro.disconnect(); return; }
+    if(f.clientHeight) f.style.setProperty('--rowH', (f.clientHeight/5)+'px');   /* alltid 5 synliga */
+    if(!scroll){ iLoop = 0; return; }
+    iLoop = grp.offsetHeight; if(!iLoop || !f.clientHeight) return;
+    var copies = Math.max(1, Math.ceil(f.clientHeight / iLoop));
+    while(tr.childElementCount > copies + 1) tr.lastElementChild.remove();
+    while(tr.childElementCount < copies + 1){ var c = grp.cloneNode(true); c.setAttribute('aria-hidden','true'); tr.append(c); }
+    iApply();
+  };
+  var ro = new ResizeObserver(fit); ro.observe(f); fit();
 }
+function iApply(){ var f = $('ints') && $('ints').querySelector('.int-track'); if(!f) return;
+  if(iLoop){ iOff = ((iOff % iLoop) + iLoop) % iLoop; } else iOff = 0;
+  f.style.transform = 'translate3d(0,'+(-Math.round(iOff))+'px,0)'; }
+var iTick = Date.now();
+setInterval(function(){   /* samma takt och riktning som nyhetsflödet */
+  var now = Date.now(), dt = Math.min(.5, (now - iTick)/1000); iTick = now;
+  if(!iLoop || document.hidden) return;
+  iOff -= NEWS_SPEED*dt; iApply();
+}, 100);
 
 /* ===================== MakerWorld-statistik (lokal tjänst makerworld.ps1 på Monstret) ===================== */
 var MW_URL = 'http://localhost:8092/makerworld', MW = null, MWerr = '';
