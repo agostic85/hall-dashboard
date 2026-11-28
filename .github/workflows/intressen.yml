@@ -1,0 +1,27 @@
+name: Uppdatera intressenyheter
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: intressen
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hämta och filtrera RSS-flöden
+        run: python3 .github/scripts/intressen.py
+      - name: Publicera när listan ändras
+        run: |
+          git add intressen.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'Uppdatera intressenyheter'
+          git pull --rebase --autostash
+          git push
