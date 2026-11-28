@@ -26,11 +26,12 @@ TOPICS = [
     ('3D', r'bambu|makerworld|3d[- ]?print|3d[- ]?skrivar|3d[- ]?utskrift|snapmaker|klipper|orcaslicer|filament'),
     ('Elbil', r'\bkia\b|\bev6\b|\bev3\b|\bev9\b|ioniq|\belbil|laddbox|zaptec|\btibber'),
     ('Hem', r'home assistant|homey|smarta? hem|smart home|zigbee|\bmatter\b|philips hue|\bhue\b|aqara|sonos|dirigera|switchbot|roborock'),
-    ('Dator', r'rtx ?50[6-9]0|geforce|\bnvidia\b|9800x3d|\bx3d\b|ryzen 7|librehardwaremonitor'),
+    ('Dator', r'rtx ?50[6-9]0|geforce|nvidia[- ]?(drivrutin|driver|uppdatering|update)|9800x3d|\bx3d\b|librehardwaremonitor'),
     ('Ljud', r'sennheiser|hörlur|headphone|\biems?\b|\bfiio\b|truthear|airpods'),
     ('iPhone', r'iphone 17|\bios 2[6-9]\b'),
 ]
-SKIP = re.compile(r'\b(deal|deals|discount|sale|save \$|rea|rabatt|black friday|cyber monday)\b', re.I)
+SKIP = re.compile(r'\b(deals?|discount|sale|rea|rabatt|kampanj|erbjudande|black (friday|week)|cyber monday|megaklick|veckans fråga|best prices?)\b'
+                  r'|\d+ ?% off|\$[\d,]+ off|\bsave (a )?(huge )?\$|\bnew \$?[\d,]+ low|\bfor just \$|price drop', re.I)
 MAX_AGE = timedelta(days=5)
 NOW = datetime.now(timezone.utc)
 
@@ -75,10 +76,8 @@ def fetch(name, url, fixed):
         if SKIP.search(title):
             continue
         cat = fixed
-        if not cat:
-            hay = (title + ' ' + re.sub(r'<[^>]+>', ' ', text(it, 'description', 'summary'))[:400]).lower()
-            cat = next((c for c, rx in TOPICS if re.search(rx, title.lower())), None) \
-                or next((c for c, rx in TOPICS if re.search(rx, hay)), None)
+        if not cat:   # allmänna källor: bara rubriken avgör, annars blir det för mycket brus
+            cat = next((c for c, rx in TOPICS if re.search(rx, title.lower())), None)
         if cat:
             out.append({'t': title[:160], 'l': link, 's': name, 'c': cat, 'ts': int(when.timestamp() * 1000)})
     return out
