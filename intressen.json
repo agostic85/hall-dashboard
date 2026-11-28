@@ -1,6 +1,20 @@
 {
  "items": [
   {
+   "t": "Volvo celebrates a half century of electric cars as Elbil turns 50",
+   "l": "https://electrek.co/2026/11/28/volvo-celebrates-a-half-century-of-electric-cars-as-elbil-turns-50/",
+   "s": "Electrek",
+   "c": "Elbil",
+   "ts": 1795870698000
+  },
+  {
+   "t": "Thermaltake’s budget RTX 5060 Ti gaming desktops are as little as $1,299",
+   "l": "https://www.tomshardware.com/desktops/gaming-pcs/thermaltakes-budget-rtx-5060-ti-gaming-desktops-are-as-little-as-usd1-299-choose-between-ddr4-and-ddr5-configurations-with-up-to-usd100-off",
+   "s": "Tom's Hardware",
+   "c": "Dator",
+   "ts": 1795862700000
+  },
+  {
    "t": "Stort test: Bästa trådlösa hörlurar (in-ear)",
    "l": "https://www.m3.se/article/1829700/basta-true-wireless-horlurar.html",
    "s": "M3",
@@ -13,13 +27,6 @@
    "s": "Electrek",
    "c": "Elbil",
    "ts": 1795792293000
-  },
-  {
-   "t": "Hyundai presenterar nya elbilen Mercury",
-   "l": "https://feber.se/bil/hyundai-presenterar-nya-elbilen-mercury/500104/?utm_source=rss&utm_medium=feed",
-   "s": "Feber",
-   "c": "Elbil",
-   "ts": 1795780800000
   },
   {
    "t": "Nvidia-uppdatering fixar SSD-bugg men ger svart skärm",
@@ -65,5 +72,5 @@
   }
  ],
  "errors": [],
- "updated": 1795861770599
+ "updated": 1795892245044
 }
