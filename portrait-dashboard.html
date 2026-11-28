@@ -692,6 +692,51 @@ html[data-dashboard="portrait"] .app { height:100dvh; min-height:0; }
 [data-dashboard="portrait"] #car .car-info .sub { font-size:.98rem; }
 [data-dashboard="portrait"] #car .car-age { white-space:normal; }
 [data-dashboard="portrait"] #car .car-pre { font-size:1rem; }
+
+/* === Porträtt: EV6 + väder sida vid sida (delat i mitten som Monstret) === */
+[data-dashboard="portrait"] main { grid-template-columns:repeat(2,minmax(0,1fr)); }
+[data-dashboard="portrait"] main > .col > .card { grid-column:1 / -1; }
+[data-dashboard="portrait"] main > .col > #car,
+[data-dashboard="portrait"] main > .col > #wxcard { grid-column:auto; align-self:stretch; }
+[data-dashboard="portrait"] #car { display:flex; flex-direction:column; align-self:stretch; }
+[data-dashboard="portrait"] #car .head { flex-wrap:nowrap; margin-bottom:.6rem; }
+[data-dashboard="portrait"] #car .head h2 { font-size:1.3rem; }
+[data-dashboard="portrait"] #car .car-mini { height:2.6rem; }
+[data-dashboard="portrait"] #car .chip { font-size:1rem; margin-left:auto; }
+[data-dashboard="portrait"] #car .car-row { flex:1; flex-wrap:wrap; align-items:center; gap:.8rem 1.1rem; }
+[data-dashboard="portrait"] #car .ring { width:6.4rem; height:6.4rem; }
+[data-dashboard="portrait"] #car .ring .lbl b { font-size:1.85rem; font-weight:500; }
+[data-dashboard="portrait"] #car .car-info { flex:1 1 9rem; gap:.3rem; }
+[data-dashboard="portrait"] #car .range { font-size:3.2rem; font-weight:300; line-height:1; letter-spacing:-.03em; }
+[data-dashboard="portrait"] #car .range .unit { font-size:1.25rem; }
+[data-dashboard="portrait"] #car .car-st { font-size:1.15rem; font-weight:600; white-space:nowrap; }
+[data-dashboard="portrait"] #car .car-info .sub { font-size:.9rem; }
+[data-dashboard="portrait"] #car .car-pre { font-size:1.15rem; min-height:3.6rem; padding:.6rem 1.3rem; }
+[data-dashboard="portrait"] #car .car-pre svg { width:1.3rem; height:1.3rem; }
+/* Väderkortet – samma innehåll och animation som i hall-dashboard */
+[data-dashboard="portrait"] #wxcard { display:flex; flex-direction:column; }
+#wxfx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;display:none;transition:opacity .6s}
+#weather{position:relative;z-index:1;flex:1;display:flex;flex-direction:column}
+body.night #wxfx{opacity:.5}
+#weather .head{margin-bottom:.6rem}
+#weather .head h2{font-size:1.3rem}
+#weather .head h2 svg{width:1.35rem;height:1.35rem}
+#weather .wx-main{display:flex;align-items:center;justify-content:flex-start;gap:1.1rem}
+#weather .wx-temp{font-size:3.6rem;font-weight:300;letter-spacing:-.04em;line-height:.9}
+#weather .wx-icon svg{width:1.8rem;height:1.8rem;stroke:var(--blue);stroke-width:1.6}
+#weather .kv{flex:1;display:grid;grid-template-columns:auto auto;gap:.35rem .9rem;margin-top:0}
+#weather .kv div{display:flex;align-items:center;gap:.4rem;font-size:1.05rem;white-space:nowrap}
+#weather .kv svg{width:1.1rem;height:1.1rem;color:var(--muted)}
+#weather .sunrow{display:flex;align-items:center;gap:.9rem;margin-top:.7rem;font-size:1rem;color:var(--muted)}
+#weather .sunrow span{display:inline-flex;align-items:center;gap:.35rem;white-space:nowrap}
+#weather .sunrow svg{width:1.1rem;height:1.1rem;color:var(--warm)}
+#weather .sunrow b{color:var(--text);font-weight:500}
+#weather .sunrow .dl{margin-left:auto}
+#weather .sunrow .dl i{font-style:normal;color:var(--faint);margin-left:.3rem}
+#weather .indoor{display:flex;gap:.6rem;margin-top:auto;padding-top:.6rem;border-top:1px solid var(--line)}
+#weather .indoor div{flex:1}
+#weather .indoor b{display:block;font-size:1.45rem;font-weight:400}
+#weather .indoor small{color:var(--muted);font-size:.85rem}
 </style>
 </head>
 <body>
@@ -753,6 +798,7 @@ html[data-dashboard="portrait"] .app { height:100dvh; min-height:0; }
   <main>
     <section class="col col-left">
       <div class="card car" id="car"></div>
+      <div class="card weather" id="wxcard"><canvas id="wxfx"></canvas><div id="weather"></div></div>
       <div class="card" id="hw"></div>
       <div class="card" id="climate"></div>
     </section>
@@ -874,7 +920,10 @@ CONFIG = {
   calNewVar: 'df3f83f2-d593-42cd-a898-68f80a8e4e8e', // Homey-variabel kalender_ny
   u1Var:     '4326587a-6627-44d9-bd7c-c6aeffddfbfd', // Homey-variabel u1_status (flödet "Hall-dashboard: hämta U1-status (Moonraker)")
   nightFrom: 0, nightTo: 0,   // ingen nattdimning på datorn
+  fcLat: 63.156, fcLon: 14.700, // position för SMHI (Torvalla) – soltider och väderanimation
   dev: {
+    outdoor:  '163a3cb4-367c-42c6-ba86-c6bd0af6430d', // Torvalla (väder)
+    living:   '748fd5ad-ad70-4934-9ccc-670a799b7d68', // Närvarosensor FP300 vardagsrum
     indoor:   '0426bba8-1bfb-4f8d-ad5b-33f24f4d48a1', // Netatmo inne (kontor)
     vind:     'c339a38e-899c-4fdd-9193-9ff6a413b2b9', // VINDSTYRKA
     purifier: '00e65144-1269-409e-83ee-89e004292298', // Ström Luftrenare
@@ -1109,20 +1158,51 @@ function renderWeather(){
   var co2 = netatmoOk() ? v(D.indoor,'measure_co2') : null;
   var cc = co2==null?'':co2<1000?'co2-good':co2<1400?'co2-ok':'co2-bad';
   $('weather').innerHTML =
-    '<div class="head"><h2>'+icon('cloud')+'Ute · Torvalla</h2></div>'+
-    '<div class="wx-main"><div class="wx-temp">'+num(v(o,'measure_temperature'))+'°</div><div class="wx-icon">'+icon(rain>0?'rain':'cloud')+'</div></div>'+
+    '<div class="head"><h2>'+icon('cloud')+'Väder</h2><span class="wx-icon">'+icon(rain>0?'rain':'cloud')+'</span></div>'+
+    '<div class="wx-main"><div class="wx-temp">'+num(v(o,'measure_temperature'))+'°</div>'+
     '<div class="kv">'+
       '<div>'+icon('wind')+num(v(o,'measure_wind_strength'))+' m/s</div>'+
       '<div class="sub">byar '+num(v(o,'measure_gust_strength'))+'</div>'+
       '<div>'+icon('rain')+num(rain)+' mm</div>'+
       '<div>'+icon('drop')+num(v(o,'measure_humidity'),0)+' %</div>'+
-    '</div>'+
+    '</div></div>'+ sunRow() +
     '<div class="indoor">'+
       '<div><small>Vardagsrum</small><b>'+num(v(D.living,'measure_temperature'))+'°</b></div>'+
       '<div><small>Kontor</small><b>'+num(officeTemp())+'°</b></div>'+
       '<div><small>CO₂ kontor</small><b class="'+cc+'">'+num(co2,0)+'</b></div>'+
     '</div>';
 }
+function sunTimes(day){
+  var rad = Math.PI/180, lat = CONFIG.fcLat, lon = CONFIG.fcLon;
+  var J = Date.UTC(day.getFullYear(), day.getMonth(), day.getDate(), 12)/864e5 + 2440587.5;
+  var n = Math.round(J - 2451545 + 0.0008), Js = n - lon/360;
+  var M = (357.5291 + 0.98560028*Js) % 360, C = 1.9148*Math.sin(M*rad) + 0.02*Math.sin(2*M*rad) + 0.0003*Math.sin(3*M*rad);
+  var L = (M + C + 180 + 102.9372) % 360, Jt = 2451545 + Js + 0.0053*Math.sin(M*rad) - 0.0069*Math.sin(2*L*rad);
+  var dec = Math.asin(Math.sin(L*rad)*Math.sin(23.4397*rad));
+  var cw = (Math.sin(-0.833*rad) - Math.sin(lat*rad)*Math.sin(dec)) / (Math.cos(lat*rad)*Math.cos(dec));
+  if(cw > 1) return {polar:'natt'}; if(cw < -1) return {polar:'dag'};
+  var w = Math.acos(cw)/rad/360, toD = function(x){ return new Date((x - 2440587.5)*864e5); };
+  var r = toD(Jt - w), s = toD(Jt + w);
+  return {rise:r, set:s, len:(s - r)/60000};
+}
+function sunRow(){
+  var t = new Date(), a = sunTimes(t), b = sunTimes(new Date(t.getFullYear(), t.getMonth(), t.getDate()-1));
+  if(a.polar) return '<div class="sunrow"><span>'+(a.polar==='dag'?'Midnattssol':'Solen går inte upp idag')+'</span></div>';
+  var hm = function(d){ return d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}); };
+  var L = Math.round(a.len), diff = b.len ? Math.round(a.len - b.len) : 0;
+  return '<div class="sunrow"><span>'+icon('sun')+'Sol <b>'+hm(a.rise)+'</b> – <b>'+hm(a.set)+'</b></span>'+
+    '<span class="dl">'+Math.floor(L/60)+' h '+(L%60)+' min<i>'+(diff>0?'+':diff<0?'−':'±')+Math.abs(diff)+' min</i></span></div>';
+}
+/* SMHI-symbol för innevarande timme → väderanimationen i väderkortet */
+function loadWx(){
+  var u = 'https://opendata-download-metfcst.smhi.se/api/category/snow1g/version/1/geotype/point/lon/'+CONFIG.fcLon.toFixed(6)+'/lat/'+CONFIG.fcLat.toFixed(6)+'/data.json';
+  fetch(u).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){
+    var nowT = Date.now(), bd = 1e15, cur = null;
+    (j.timeSeries||[]).forEach(function(x){ var dd = Math.abs(new Date(x.time) - nowT), s = x.data && x.data.symbol_code; if(s && s!==9999 && dd<bd){ bd = dd; cur = s; } });
+    window.wxSym = cur; if(window.wxSet) wxSet(cur);
+  }).catch(function(){});
+}
+if(portraitDashboard){ setTimeout(loadWx, 1500); setInterval(loadWx, 30*60*1000); setInterval(function(){ if(D.outdoor) renderWeather(); }, 10*60*1000); }
 
 
 function lightInfo(L){
@@ -1169,8 +1249,9 @@ function renderCar(){
       '<div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" stroke="#262c37"/><circle cx="50" cy="50" r="42" stroke="'+col+'" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" style="transition:stroke-dashoffset .6s"/></svg>'+
         '<div class="lbl"><div><b>'+num(b,0)+'%</b><small>batteri</small></div></div></div>'+
       '<div class="car-info">'+
-        '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span><span class="sub car-st" style="color:'+(charging?'var(--good)':'var(--muted)')+'">'+status+'</span></div>'+
-        '<div class="sub car-age" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+(am!=null && am<1200 ? String(lr).slice(-5) : svDate(lr)))+(am!=null ? ' · '+agoTxt(am) : '')+'</div>'+
+        '<div class="range">'+num(v(c,'measure_range'),0)+'<span class="unit">km</span></div>'+
+        '<div class="car-st" style="color:'+(charging?'var(--good)':plugged?'var(--blue)':'var(--muted)')+'">'+status+'</div>'+
+        '<div class="sub car-age" title="Senaste gången något värde från bilen ändrades i Homey" style="'+(am!=null && am>720 ? 'color:var(--warn)' : '')+'">'+(am!=null ? 'Uppdaterad '+agoTxt(am) : (lu ? 'Ny data '+fmtTs(lu, am) : 'Hämtad '+svDate(lr)))+'</div>'+
       '</div>'+
       (!portraitDashboard ? '' : '<button class="btn car-pre'+(clim?' active':'')+'" data-act="climate">'+icon('fire')+(clim?'Förvärmer':'Förvärm')+'</button>')+
     '</div>';
@@ -1331,7 +1412,7 @@ function renderAlerts(){
 
 function render(){
   renderCar(); renderClimate(); renderPrinters();
-  if(portraitDashboard){ renderAlertsPC(); }
+  if(portraitDashboard){ renderWeather(); renderAlertsPC(); }
   else { renderLightGroups(); renderScenes(); renderCurtain(); renderSpotify(); }
   if(dimIdx!=null) syncDim();
 }
@@ -2091,6 +2172,112 @@ document.addEventListener('click', function(e){
       .then(function(h){ if(cur && h!==cur && h.indexOf('</html>')>0){ try{localStorage.setItem('pcDash.cache',h);}catch(e){} location.reload(); } })
       .catch(function(){});
   }, 10*60*1000);
+})();
+</script>
+<script>
+/* ===================== Väderanimation i väderkortet =====================
+   Styrs av SMHI:s symbol för innevarande timme (sätts i loadFc via wxSet).
+   Testa manuellt med ?wx=rain | rain2 | rain3 | snow | snow3 | sleet | thunder | fog | clear | none */
+(function(){
+  var cv = document.getElementById('wxfx'); if(!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d'), W = 0, H = 0, DPR = Math.min(window.devicePixelRatio||1, 1.5);
+  var P = [], mode = 'none', lvl = 1, flash = 0, nextFlash = 0, fogs = [], stars = [], t0 = 0, last = 0, raf = 0;
+  var force = (/[?&]wx=([a-z0-9]+)/.exec(location.search)||[])[1];
+
+  function resize(){ var r = cv.parentNode.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height); cv.width = W*DPR; cv.height = H*DPR; ctx.setTransform(DPR,0,0,DPR,0,0); build(); }
+  function area(){ return (W*H)/(1334*800/2.5); }
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+
+  function isDay(){ /* enkel solhöjdsberäkning för Torvalla */
+    var d = new Date(), lat = 63.156*Math.PI/180, lon = 14.7;
+    var n = (d - new Date(d.getFullYear(),0,0))/864e5, decl = -23.44*Math.cos(2*Math.PI*(n+10)/365)*Math.PI/180;
+    var utcH = d.getUTCHours() + d.getUTCMinutes()/60, ha = ((utcH + lon/15) - 12)*15*Math.PI/180;
+    return Math.asin(Math.sin(lat)*Math.sin(decl) + Math.cos(lat)*Math.cos(decl)*Math.cos(ha)) > -0.05;
+  }
+
+  function fromSym(s){ s = +s;
+    if(s===11||s===21) return ['thunder',2];
+    if(s===18||s===8) return ['rain',1]; if(s===19||s===9) return ['rain',2]; if(s===20||s===10) return ['rain',3];
+    if(s===25||s===15) return ['snow',1]; if(s===26||s===16) return ['snow',2]; if(s===27||s===17) return ['snow',3];
+    if((s>=12&&s<=14)||(s>=22&&s<=24)) return ['sleet',2];
+    if(s===7) return ['fog',1];
+    if(s>=1&&s<=2) return ['clear',2]; if(s>=3&&s<=4) return ['clear',1];
+    return ['none',1];
+  }
+  function fromForce(f){ var m = /^([a-z]+)(\d)?$/.exec(f)||[]; return [m[1]||'none', +(m[2]||2)]; }
+
+  function drop(y){ return {k:'r', x:rnd(-50,W+50), y:y==null?rnd(-H,0):y, l:rnd(6,12)*(lvl>2?1.25:1), v:rnd(7,11)*(lvl>2?1.2:1), a:rnd(.16,.38)}; }
+  function flake(y){ return {k:'s', x:rnd(0,W), y:y==null?rnd(-20,0):y, r:rnd(.8,2.2), v:rnd(.35,.9), p:rnd(0,6.28), w:rnd(.3,1), a:rnd(.35,.85)}; }
+
+  function build(){
+    P = []; fogs = []; stars = []; var A = area();
+    var nR = {1:70,2:150,3:280}[lvl]*A, nS = {1:60,2:130,3:240}[lvl]*A;
+    if(mode==='rain'||mode==='thunder') for(var i=0;i<nR;i++) P.push(drop(rnd(-H,H)));
+    if(mode==='snow') for(i=0;i<nS;i++) P.push(flake(rnd(0,H)));
+    if(mode==='sleet'){ for(i=0;i<nR*.5;i++) P.push(drop(rnd(-H,H))); for(i=0;i<nS*.5;i++) P.push(flake(rnd(0,H))); }
+    if(mode==='fog') for(i=0;i<5;i++) fogs.push({x:rnd(0,W), y:rnd(0,H), r:rnd(W*.4,W*.8), v:rnd(.08,.2)*(Math.random()<.5?-1:1)});
+    if(mode==='clear' && !isDay()) for(i=0;i<110*A*(lvl/2);i++) stars.push({x:rnd(0,W), y:rnd(0,H*.75), r:rnd(.4,1.3), p:rnd(0,6.28), s:rnd(.5,1.6)});
+    nextFlash = performance.now() + rnd(3000,8000);
+  }
+
+  function frame(now){
+    raf = requestAnimationFrame(frame);
+    if(document.hidden || now - last < 33) return;          /* ~30 fps */
+    var dt = Math.min(3, (now - last)/33); last = now; t0 += dt;
+    ctx.clearRect(0,0,W,H);
+    var wind = mode==='thunder' ? 1.8 : .9;
+
+    if(mode==='clear'){
+      if(isDay()){
+        var pulse = .5 + .5*Math.sin(t0*.02), R = Math.max(W,H)*1.1;
+        var g = ctx.createRadialGradient(W*.92,-H*.05,0,W*.92,-H*.05,R);
+        g.addColorStop(0,'rgba(255,214,140,'+(.13+.04*pulse)*(lvl/2)+')'); g.addColorStop(.45,'rgba(255,190,110,'+.04*(lvl/2)+')'); g.addColorStop(1,'rgba(255,190,110,0)');
+        ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+      } else stars.forEach(function(s){
+        ctx.globalAlpha = .25 + .55*(.5+.5*Math.sin(t0*.05*s.s + s.p));
+        ctx.fillStyle = '#dfe9ff'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,6.28); ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+    }
+
+    if(mode==='fog') fogs.forEach(function(f){
+      f.x += f.v*dt; if(f.x - f.r > W) f.x = -f.r; if(f.x + f.r < 0) f.x = W + f.r;
+      var g = ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,f.r);
+      g.addColorStop(0,'rgba(190,205,225,.09)'); g.addColorStop(1,'rgba(190,205,225,0)');
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    });
+
+    ctx.lineCap = 'round';
+    for(var i=0;i<P.length;i++){ var p = P[i];
+      if(p.k==='r'){
+        p.y += p.v*dt; p.x += wind*dt;
+        if(p.y > H){ P[i] = drop(rnd(-60,-10)); continue; }
+        ctx.strokeStyle = 'rgba(165,200,255,'+p.a+')'; ctx.lineWidth = 1.1;
+        ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x - wind*p.l/p.v, p.y - p.l); ctx.stroke();
+      } else {
+        p.y += p.v*dt; p.p += .02*dt; p.x += (Math.sin(p.p)*p.w + .25)*dt;
+        if(p.y > H+5){ P[i] = flake(-5); continue; }
+        ctx.fillStyle = 'rgba(240,246,255,'+p.a+')'; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.28); ctx.fill();
+      }
+    }
+
+    if(mode==='thunder'){
+      if(now > nextFlash){ flash = .22; nextFlash = now + rnd(6000,15000); setTimeout(function(){ flash = .16; }, 140); }
+      if(flash > 0.005){ ctx.fillStyle = 'rgba(200,215,255,'+flash+')'; ctx.fillRect(0,0,W,H); flash *= Math.pow(.85, dt); }
+    }
+  }
+
+  window.wxSet = function(sym){
+    var m = force ? fromForce(force) : fromSym(sym);
+    if(m[0]===mode && m[1]===lvl) return;
+    mode = m[0]; lvl = Math.max(1, Math.min(3, m[1])); build();
+    cv.style.display = mode==='none' ? 'none' : 'block';
+  };
+  if(window.ResizeObserver) new ResizeObserver(resize).observe(cv.parentNode); else addEventListener('resize', resize); resize();
+  wxSet(window.wxSym);
+  /* klart: växla sol/stjärnor vid gryning/skymning */
+  setInterval(function(){ if(mode==='clear') build(); }, 10*60*1000);
+  raf = requestAnimationFrame(frame);
 })();
 </script>
 </body>
