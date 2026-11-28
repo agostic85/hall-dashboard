@@ -792,6 +792,19 @@ html[data-dashboard="touch"] main { flex:1; min-height:0; align-items:stretch; g
 [data-dashboard="touch"] #printers .printer-control > span { font-size:1rem; font-weight:600; white-space:nowrap; }
 [data-dashboard="touch"] .battlefield-controls .game-action { flex:1; display:flex; flex-direction:column; align-items:stretch; min-height:0; text-align:center; }
 [data-dashboard="touch"] #pc-power .pwr-ic { flex:1 1 0; }
+/* Monstret: laddning och nedräkning på knapparna */
+#pc-power .pwr-ic { position:relative; overflow:hidden; transition:border-color .2s, background .2s; }
+#pc-power .pwr-ic::after { content:""; position:absolute; left:0; bottom:0; height:6px; width:calc(var(--p,0) * 1%); background:var(--warm); opacity:0; transition:width .1s linear; }
+#pc-power .pwr-ic.arm, #pc-power .pwr-ic.go { color:var(--text); }
+#pc-power .pwr-ic.arm { border-color:var(--warm); background:rgba(246,184,75,.12); }
+#pc-power .pwr-ic.go { border-color:var(--bad); background:rgba(255,107,107,.18); animation:pcpulse 1s ease-in-out infinite; }
+#pc-power .pwr-ic.go::after { background:var(--bad); }
+#pc-power .pwr-ic:is(.arm,.go)::after { opacity:1; }
+#pc-power .pwr-ic:is(.arm,.go) > svg { opacity:.18; }
+#pc-power .pc-cd { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.2rem; pointer-events:none; text-align:center; padding:0 .4rem; }
+#pc-power .pc-cd b { font-size:2.6rem; font-weight:700; line-height:1; }
+#pc-power .pc-cd small { font-size:.85rem; font-weight:600; line-height:1.2; }
+@keyframes pcpulse { 50% { box-shadow:0 0 1.4rem rgba(255,107,107,.45); } }
 </style>
 </head>
 <body>
@@ -887,10 +900,10 @@ html[data-dashboard="touch"] main { flex:1; min-height:0; align-items:stretch; g
         <div class="head"><h2>Monstret</h2></div>
         <div class="printer-control">
           <button class="pwr-ic" data-act="pcshutdown" aria-label="Stäng av datorn" title="Stäng av datorn">
-            <svg aria-hidden="true"><use href="#i-power"/></svg>
+            <svg aria-hidden="true"><use href="#i-power"/></svg><span class="pc-cd"></span>
           </button>
           <button class="pwr-ic" data-act="pcrestart" aria-label="Starta om datorn" title="Starta om datorn">
-            <svg aria-hidden="true"><use href="#i-reload"/></svg>
+            <svg aria-hidden="true"><use href="#i-reload"/></svg><span class="pc-cd"></span>
           </button>
         </div>
       </div>
@@ -2051,11 +2064,8 @@ document.addEventListener('click', function(e){
     case 'curtain': setCap(D.curtain,'windowcoverings_state',t.dataset.v); break;
     case 'onoff': setCap(t.dataset.id,t.dataset.cap,!v(t.dataset.id,t.dataset.cap)); break;
     case 'pcrestart':
-      location.href = 'kontoret-monstret-restart://restart';
-      break;
     case 'pcshutdown':
-      location.href = 'kontoret-monstret-power://shutdown';
-      break;
+      pcPress(act); break;
     case 'pwr': {
       var pid = t.dataset.id, pOn = !!v(pid,'onoff');
       // Skydd: pågående utskrift kräver en andra tryckning inom 4 s för att bryta strömmen
@@ -2097,6 +2107,43 @@ document.addEventListener('click', function(e){
 });
 function closeDim(){ $('dimScrim').classList.remove('show'); dimIdx = null; }
 $('dimScrim').addEventListener('click', function(e){ if(e.target===this) closeDim(); });
+
+/* ===================== Monstret: stäng av / starta om med skydd =====================
+   Tryck 1: knappen laddas i 4 s ("Tryck igen") – händer inget avbryts det av sig självt.
+   Tryck 2: 5 s nedräkning innan datorn tvångsstängs/startas om. Tryck på valfri Monstret-knapp avbryter. */
+var PC_ACT = {
+  pcshutdown: {url:'kontoret-monstret-power://shutdown',  verb:'Stängs av', noun:'Avstängning'},
+  pcrestart:  {url:'kontoret-monstret-restart://restart', verb:'Startar om', noun:'Omstart'}
+};
+var PC_ARM_MS = 4000, PC_GO_MS = 5000, pcS = null;
+function pcBtn(act){ return document.querySelector('#pc-power [data-act="'+act+'"]'); }
+function pcReset(msg){
+  if(pcS){ clearInterval(pcS.iv); var b = pcBtn(pcS.act); if(b){ b.classList.remove('arm','go'); b.style.removeProperty('--p'); b.querySelector('.pc-cd').textContent = ''; } }
+  pcS = null; if(msg) toast(msg);
+}
+function pcStart(act, phase){
+  var b = pcBtn(act); if(!b) return;
+  pcS = {act:act, phase:phase, t0:Date.now(), dur: phase==='arm' ? PC_ARM_MS : PC_GO_MS};
+  b.classList.remove('arm','go'); b.classList.add(phase);
+  var tick = function(){
+    if(!pcS) return;
+    var left = Math.max(0, pcS.dur - (Date.now()-pcS.t0)), sec = Math.ceil(left/1000);
+    b.style.setProperty('--p', (left/pcS.dur*100).toFixed(1));
+    b.querySelector('.pc-cd').innerHTML = pcS.phase==='arm'
+      ? '<b>'+sec+'</b><small>Tryck igen</small>'
+      : '<b>'+sec+'</b><small>'+PC_ACT[act].verb+'…</small><small style="opacity:.8">Tryck för att avbryta</small>';
+    if(left > 0) return;
+    if(pcS.phase==='arm'){ pcReset(); return; }
+    var url = PC_ACT[act].url; pcReset(); location.href = url;
+  };
+  pcS.iv = setInterval(tick, 100); tick();
+}
+function pcPress(act){
+  if(pcS && pcS.phase==='go'){ var n = PC_ACT[pcS.act].noun; pcReset(n+' avbruten'); return; }
+  if(pcS && pcS.act===act && pcS.phase==='arm'){ clearInterval(pcS.iv); pcStart(act, 'go'); return; }
+  pcReset(); pcStart(act, 'arm');
+}
+
 /* Inställningar utan rubrikrad: håll inne på ett kortnamn i 1,5 s */
 (function(){
   var t = null;
