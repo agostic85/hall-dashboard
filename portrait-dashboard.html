@@ -737,6 +737,9 @@ body.night #wxfx{opacity:.5}
 #weather .indoor div{flex:1}
 #weather .indoor b{display:block;font-size:1.45rem;font-weight:400}
 #weather .indoor small{color:var(--muted);font-size:.85rem}
+[data-dashboard="portrait"] #printers { display:contents; }
+[data-dashboard="portrait"] #printers .pcard { display:flex; flex-direction:column; }
+[data-dashboard="portrait"] #printers .pcard .printer { padding:0; flex:1; }
 </style>
 </head>
 <body>
@@ -1691,6 +1694,10 @@ function renderPrinters(){
   h += printerBlock({nm:'Snapmaker U1', st:s2, run:s2[1]==='Skriver', pct:up, layers:uLay, remMin:u1Rem(u, up, eta), job:uJob.replace(/_/g,' '),
     temps:[['Hotend',num(uHot,0)],['Bädd',num(uBed,0)],['Kammare',num(uCav,0)]],
     w:num(v(D.u1Plug,'measure_power'),0), power:{on:!!v(D.u1Plug,'onoff'), id:D.u1Plug, ic:'u1'}});
+  if(portraitDashboard){   /* porträtt: ett eget kort per skrivare, sida vid sida */
+    var tmp = document.createElement('div'); tmp.innerHTML = h; h = '';
+    tmp.querySelectorAll('.printer').forEach(function(p){ h += '<div class="card pcard">'+p.outerHTML+'</div>'; });
+  }
   $('printers').innerHTML = h;
   $('printers').classList.toggle('both', $('printers').querySelectorAll('.printer.run').length > 1);   /* båda skriver: lite tätare */
 }
